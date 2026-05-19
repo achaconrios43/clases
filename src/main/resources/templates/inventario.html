@@ -51,6 +51,18 @@
     </div>
   </div>
 
+  <!-- Toggle Vista -->
+  <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+    <span style="font-size:12px; font-weight:700; color:#5b667a;">Vista:</span>
+    <button id="btnLista" onclick="setVista('lista')"
+            style="padding:7px 18px; background:linear-gradient(90deg,#0f4c75,#1b6ca8); color:#fff; border:none; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer;">📋 Lista</button>
+    <button id="btnRacks" onclick="setVista('racks')"
+            style="padding:7px 18px; background:#e5e7eb; color:#374151; border:none; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer;">🗄️ Vista Racks</button>
+  </div>
+
+  <!-- Vista Lista -->
+  <div id="vistaLista">
+
   <!-- Table card -->
   <div class="dcim-card" style="overflow:hidden;">
     <div class="card-band" style="background:linear-gradient(90deg,#0f4c75,#1b6ca8)"></div>
@@ -165,8 +177,282 @@
     </div>
   </div>
 
+  </div><!-- /vistaLista -->
+
+  <!-- Vista Racks -->
+  <div id="vistaRacks" style="display:none;">
+    <div class="dcim-card" style="overflow:visible;">
+      <div class="card-band" style="background:linear-gradient(90deg,#0f4c75,#1b6ca8)"></div>
+      <div style="padding:20px 20px 8px;">
+        <span style="font-weight:800; font-size:14px; color:#0f4c75;">🗄️ Vista por Racks</span>
+        <span style="font-size:12px; color:#6b7280; margin-left:10px;">Posicione el cursor sobre un rack para ver su contenido · Haga clic para abrir el diagrama</span>
+      </div>
+      <div id="rackGrid" style="display:flex; flex-wrap:wrap; gap:18px; padding:16px 20px 24px;"></div>
+    </div>
+  </div>
+
 </main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<!-- Tooltip flotante de rack -->
+<div id="rackTooltip" style="
+  display:none; position:fixed; z-index:9999;
+  min-width:380px; max-width:460px;
+  background:#fff; border-radius:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.22);
+  border:1.5px solid #d1d5db;
+  pointer-events:none;
+  overflow:hidden;
+"></div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+
+/* ── Build raw data from Thymeleaf ── */
+const invRaw = [];
+/*[# th:each="inv : ${inventarios}"]*/
+invRaw.push({
+  id:       [[${inv.id}]],
+  rack:     [[${inv.nombreRack}]],
+  tipo:     [[${inv.tipo}]],
+  marca:    [[${inv.marca}]],
+  modelo:   [[${inv.modelo}]],
+  serie:    [[${inv.numeroSerie}]],
+  urUbic:   [[${inv.ubicacionUr}]],
+  urUtil:   [[${inv.urUtilizada}]],
+  capRack:  [[${inv.capacidadUrRack}]],
+  coords:   [[${inv.coordenadas}]],
+  sitio:    [[${inv.sitio}]],
+  sala:     [[${inv.sala}]],
+  estado:   [[${inv.estado}]]
+});
+/*[/]*/
+
+/* ── Utilities ── */
+function parseUr(val) {
+  if (val == null) return 0;
+  const n = String(val).replace(/[^0-9]/g, '');
+  return n ? parseInt(n, 10) : 0;
+}
+
+function estadoBadge(estado) {
+  if (!estado || estado === 'N/A') return '<span style="color:#9ca3af;">—</span>';
+  const map = {
+    'Operativo': ['#d1fae5','#065f46'],
+    'Activo':    ['#d1fae5','#065f46'],
+    'Alarmado':  ['#fee2e2','#7f1d1d'],
+    'Inactivo':  ['#fee2e2','#7f1d1d'],
+    'Retirado':  ['#fee2e2','#7f1d1d'],
+    'Apagado':   ['#e5e7eb','#374151'],
+    'STAND BY':  ['#fef3c7','#92400e'],
+  };
+  const c = map[estado] || ['#fef3c7','#92400e'];
+  return `<span style="background:${c[0]};color:${c[1]};padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;">${estado}</span>`;
+}
+
+function occupancyColor(pct) {
+  if (pct >= 85) return { bg:'#dc2626', border:'#dc2626', light:'#fee2e2', text:'#7f1d1d' };
+  if (pct >= 60) return { bg:'#d97706', border:'#d97706', light:'#fef3c7', text:'#92400e' };
+  return               { bg:'#16a34a', border:'#16a34a', light:'#d1fae5', text:'#065f46' };
+}
+
+/* ── Group inventario by rack ── */
+function buildRacks(data) {
+  const map = {};
+  data.forEach(inv => {
+    const rackName = (inv.rack && inv.rack !== 'N/A' && inv.rack !== '') ? inv.rack : 'Sin Rack';
+    if (!map[rackName]) {
+      map[rackName] = { nombre: rackName, coordenadas: '', capacidadTotal: 0,
+                        sitio: '', sala: '', equipos: [] };
+    }
+    const r = map[rackName];
+    const tipo = (inv.tipo || '').toLowerCase().trim();
+    if (tipo === 'rack' || tipo === 'racks') {
+      if (inv.coords && inv.coords !== 'N/A' && inv.coords !== '')  r.coordenadas   = inv.coords;
+      if (inv.capRack && inv.capRack > 0)                           r.capacidadTotal = inv.capRack;
+      if (!r.sitio && inv.sitio) r.sitio = inv.sitio;
+      if (!r.sala  && inv.sala)  r.sala  = inv.sala;
+    } else {
+      if (!r.coordenadas && inv.coords && inv.coords !== 'N/A') r.coordenadas = inv.coords;
+      if (!r.sitio && inv.sitio) r.sitio = inv.sitio;
+      if (!r.sala  && inv.sala)  r.sala  = inv.sala;
+      r.equipos.push(inv);
+    }
+  });
+  return map;
+}
+
+/* ── Render rack grid ── */
+function renderRackGrid() {
+  const rackMap = buildRacks(invRaw);
+  const grid    = document.getElementById('rackGrid');
+  grid.innerHTML = '';
+  const racks = Object.values(rackMap).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', {numeric: true}));
+
+  if (racks.length === 0) {
+    grid.innerHTML = '<div style="color:#9ca3af;font-size:14px;padding:20px;">Sin racks disponibles en la selección actual</div>';
+    return;
+  }
+
+  racks.forEach(r => {
+    const urUsadas = r.equipos.reduce((s, e) => s + Math.max(1, parseUr(e.urUtil)), 0);
+    const cap      = r.capacidadTotal > 0 ? r.capacidadTotal : Math.max(urUsadas + 4, 12);
+    const pct      = cap > 0 ? Math.min(100, Math.round(urUsadas * 100 / cap)) : 0;
+    const col      = occupancyColor(pct);
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      width:140px; background:#fff; border-radius:12px;
+      border:2px solid ${col.border}; cursor:pointer;
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+      transition:transform 0.15s, box-shadow 0.15s;
+      flex:0 0 auto; user-select:none;
+    `;
+
+    card.innerHTML = `
+      <div style="background:${col.bg}; height:7px; border-radius:10px 10px 0 0;"></div>
+      <div style="padding:12px 10px 12px; text-align:center;">
+        <div style="font-size:26px; margin-bottom:4px;">🗄️</div>
+        <div style="font-weight:900; font-size:14px; color:#172134; margin-bottom:6px; line-height:1.2;">${r.nombre}</div>
+        <div style="min-height:22px; margin-bottom:8px;">
+          ${r.coordenadas ? `<span style="background:#f59e0b;color:#000;font-size:11px;font-weight:900;padding:2px 9px;border-radius:4px;letter-spacing:.04em;">${r.coordenadas}</span>` : ''}
+        </div>
+        <div style="margin-bottom:8px;">
+          <span style="font-size:22px; font-weight:900; color:${col.bg};">${urUsadas}</span><span style="font-size:11px; color:#6b7280;">/${cap} UR</span>
+        </div>
+        <div style="background:#e5e7eb; border-radius:3px; height:5px; overflow:hidden; margin-bottom:6px;">
+          <div style="width:${pct}%; height:100%; background:${col.bg}; border-radius:3px;"></div>
+        </div>
+        <div style="font-size:10px; font-weight:700; color:${col.text}; background:${col.light}; padding:2px 6px; border-radius:99px;">
+          ${pct}% · ${r.equipos.length} equipo${r.equipos.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+    `;
+
+    /* Hover → tooltip */
+    card.addEventListener('mouseenter', e => {
+      showTooltip(r, urUsadas, cap, pct, e);
+      card.style.transform   = 'translateY(-4px)';
+      card.style.boxShadow   = '0 10px 28px rgba(0,0,0,0.18)';
+    });
+    card.addEventListener('mousemove',  e => positionTooltip(e));
+    card.addEventListener('mouseleave', () => {
+      hideTooltip();
+      card.style.transform = '';
+      card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+    });
+
+    /* Click → layout-vertical */
+    card.addEventListener('click', () => {
+      const p = new URLSearchParams();
+      if (r.sitio) p.set('sitio', r.sitio);
+      if (r.sala)  p.set('sala',  r.sala);
+      p.set('rack', r.nombre);
+      window.location.href = '/layout-vertical?' + p.toString();
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+/* ── Tooltip ── */
+const tooltip = document.getElementById('rackTooltip');
+
+function showTooltip(r, urUsadas, cap, pct, e) {
+  const col = occupancyColor(pct);
+  let rows = '';
+  if (r.equipos.length === 0) {
+    rows = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:12px 8px;font-size:12px;">Rack vacío</td></tr>';
+  } else {
+    const sorted = [...r.equipos].sort((a, b) => parseUr(a.urUbic) - parseUr(b.urUbic));
+    sorted.forEach(eq => {
+      const marca  = (eq.marca  && eq.marca  !== 'N/A') ? eq.marca  : '—';
+      const modelo = (eq.modelo && eq.modelo !== 'N/A') ? eq.modelo : '—';
+      const serie  = (eq.serie  && eq.serie  !== 'N/A') ? `<span style="font-family:monospace;">${eq.serie}</span>` : '—';
+      const ur     = eq.urUbic && eq.urUbic !== 'N/A' && eq.urUbic !== '0'
+                     ? eq.urUbic + (eq.urUtil && eq.urUtil !== '0' && eq.urUtil !== 'N/A' ? ` <span style="color:#6b7280;">(${eq.urUtil}U)</span>` : '')
+                     : '—';
+      rows += `
+        <tr>
+          <td style="padding:5px 8px;font-size:11px;white-space:nowrap;border-bottom:1px solid #f1f5f9;">${marca}</td>
+          <td style="padding:5px 8px;font-size:11px;white-space:nowrap;border-bottom:1px solid #f1f5f9;">${modelo}</td>
+          <td style="padding:5px 8px;font-size:11px;border-bottom:1px solid #f1f5f9;">${serie}</td>
+          <td style="padding:5px 8px;font-size:11px;white-space:nowrap;border-bottom:1px solid #f1f5f9;">${ur}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid #f1f5f9;">${estadoBadge(eq.estado)}</td>
+        </tr>`;
+    });
+  }
+
+  tooltip.innerHTML = `
+    <div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:11px 14px; border-radius:8px 8px 0 0;">
+      <div style="color:#fff; font-weight:800; font-size:13px;">🗄️ ${r.nombre}</div>
+      <div style="display:flex; gap:8px; margin-top:5px; align-items:center; flex-wrap:wrap;">
+        ${r.coordenadas ? `<span style="background:#f59e0b;color:#000;font-size:10px;font-weight:900;padding:1px 8px;border-radius:3px;">${r.coordenadas}</span>` : ''}
+        <span style="color:rgba(255,255,255,0.85); font-size:11px;">${urUsadas}/${cap} UR ocupadas</span>
+        <span style="background:${col.light}; color:${col.text}; font-size:10px; font-weight:700; padding:1px 7px; border-radius:99px;">${pct}%</span>
+        ${r.sitio ? `<span style="color:rgba(255,255,255,0.6);font-size:10px;">${r.sitio}${r.sala ? ' › ' + r.sala : ''}</span>` : ''}
+      </div>
+    </div>
+    <div style="overflow-y:auto; max-height:260px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#e0eaf5; position:sticky; top:0;">
+            <th style="padding:5px 8px; font-size:10px; font-weight:800; color:#0f4c75; text-transform:uppercase; text-align:left; white-space:nowrap;">Marca</th>
+            <th style="padding:5px 8px; font-size:10px; font-weight:800; color:#0f4c75; text-transform:uppercase; text-align:left; white-space:nowrap;">Modelo</th>
+            <th style="padding:5px 8px; font-size:10px; font-weight:800; color:#0f4c75; text-transform:uppercase; text-align:left;">Serie</th>
+            <th style="padding:5px 8px; font-size:10px; font-weight:800; color:#0f4c75; text-transform:uppercase; text-align:left; white-space:nowrap;">UR</th>
+            <th style="padding:5px 8px; font-size:10px; font-weight:800; color:#0f4c75; text-transform:uppercase; text-align:left; white-space:nowrap;">Estado</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="background:#f8fafc; padding:7px 14px; font-size:10px; color:#6b7280; text-align:center; border-top:1px solid #e5e7eb;">
+      📐 Haga clic en el rack para abrir el diagrama visual
+    </div>
+  `;
+  tooltip.style.display = 'block';
+  positionTooltip(e);
+}
+
+function positionTooltip(e) {
+  const TW = 420, TH = 340;
+  let x = e.clientX + 18, y = e.clientY + 10;
+  if (x + TW > window.innerWidth  - 12) x = e.clientX - TW - 18;
+  if (y + TH > window.innerHeight - 12) y = e.clientY - TH - 10;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+
+function hideTooltip() {
+  tooltip.style.display = 'none';
+}
+
+/* ── Vista toggle ── */
+function setVista(vista) {
+  const lista  = document.getElementById('vistaLista');
+  const racks  = document.getElementById('vistaRacks');
+  const btnL   = document.getElementById('btnLista');
+  const btnR   = document.getElementById('btnRacks');
+  if (vista === 'lista') {
+    lista.style.display = '';
+    racks.style.display = 'none';
+    btnL.style.background = 'linear-gradient(90deg,#0f4c75,#1b6ca8)';
+    btnL.style.color = '#fff';
+    btnR.style.background = '#e5e7eb';
+    btnR.style.color = '#374151';
+  } else {
+    lista.style.display = 'none';
+    racks.style.display = '';
+    btnL.style.background = '#e5e7eb';
+    btnL.style.color = '#374151';
+    btnR.style.background = 'linear-gradient(90deg,#0f4c75,#1b6ca8)';
+    btnR.style.color = '#fff';
+    renderRackGrid();
+  }
+}
+/*]]>*/
+</script>
 </body>
 </html>
