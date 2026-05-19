@@ -53,6 +53,12 @@ jobs:
       - name: Image digest
         run: echo "Image pushed successfully - ${{ steps.meta.outputs.tags }}"
 
+      - name: Trigger Render deploy
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          curl -s -o /dev/null -w "HTTP %{http_code}" -X GET "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          echo " - Render deploy triggered"
+
       - name: Update Kubernetes manifests (optional)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
