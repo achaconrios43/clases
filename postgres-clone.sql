@@ -19,6 +19,11 @@ INSERT INTO sala (id, activo, descripcion, fecha_creacion, fecha_modificacion, n
 (2, true, '', '2026-05-13 05:05:15.737882', '2026-05-13 05:05:15.737882', 'CPD',      2, 'Sala TI'),
 (3, true, '', '2026-05-13 23:11:30.405338', '2026-05-13 23:11:30.405338', 'Mainframe', 3, 'Sala TI');
 
+-- ---- PUNTO_MEDICION (2 puntos activos para sala CPD, sala_id=2) ----
+INSERT INTO punto_medicion (id, activo, codigo, nombre, temperatura_maxima, temperatura_minima, sala_id, fecha_creacion, fecha_modificacion) VALUES
+(4, true, '01', 'r4', 34.00, 17.00, 2, '2026-05-14 04:00:00', '2026-05-14 04:00:00'),
+(5, true, '02', 'j6', 34.00, 17.00, 2, '2026-05-14 04:00:00', '2026-05-14 04:00:00');
+
 -- ---- USUARIO (1 registro – los otros fueron eliminados en MySQL) ----
 INSERT INTO usuario (id, apellido, creat_at, email, nombre, password, rol, rut, update_at, modulos_permitidos) VALUES
 (4, 'Chacón Ríos', '2026-05-01 19:25:57.000000', 'achaconrios@gmail.com', 'Arturo',
@@ -108,6 +113,7 @@ INSERT INTO inventario (
  2, 2);
 
 -- ---- Resetear secuencias al valor correcto ----
+SELECT setval('punto_medicion_id_seq', COALESCE((SELECT MAX(id) FROM punto_medicion), 1));
 SELECT setval('sitio_id_seq',         COALESCE((SELECT MAX(id) FROM sitio), 1));
 SELECT setval('sala_id_seq',          COALESCE((SELECT MAX(id) FROM sala), 1));
 SELECT setval('usuario_id_seq',       COALESCE((SELECT MAX(id) FROM usuario), 1));
