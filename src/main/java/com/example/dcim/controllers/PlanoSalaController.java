@@ -49,8 +49,6 @@ public class PlanoSalaController {
 
     @GetMapping
     public String listar(Model model) {
-        model.addAttribute("planos", planoSalaRepository.findByEsPlantillaFalseOrderByFechaCreacionDesc());
-        model.addAttribute("sitios", sitioRepository.findByActivoTrueOrderByNombreAsc());
         model.addAttribute("salas", salaRepository.findAll());
         return "plano-sala";
     }
@@ -401,6 +399,8 @@ public class PlanoSalaController {
     @GetMapping("/plantillas")
     public String listarPlantillas(Model model) {
         model.addAttribute("plantillas", planoSalaRepository.findByEsPlantillaTrueOrderByNombrePlantillaAsc());
+        model.addAttribute("planos", planoSalaRepository.findByEsPlantillaFalseOrderByFechaCreacionDesc());
+        model.addAttribute("sitios", sitioRepository.findByActivoTrueOrderByNombreAsc());
         model.addAttribute("salas", salaRepository.findAll());
         return "plano-sala-plantillas";
     }
