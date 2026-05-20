@@ -5,135 +5,533 @@
 <nav th:replace="~{fragments/navdar :: nav}"></nav>
 
 <!-- Page Header -->
-<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+<div style="background:linear-gradient(90deg,#1e3a5f,#0b3c75); padding:16px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
   <div style="display:flex; align-items:center; gap:16px;">
     <a href="/dashboard" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Dashboard</a>
-    <span style="color:rgba(255,255,255,0.4);"> /</span>
-    <span style="color:#ffffff; font-weight:800; font-size:15px;">🗄️ Planos Salas Técnicas</span>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">🗄️ Editor de Plano Técnico</span>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button onclick="savePlano()" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">💾 Guardar Plano</button>
+    <button onclick="clearGrid()" style="background:rgba(220,38,38,0.35); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">🗑️ Limpiar</button>
   </div>
 </div>
-<main class="flex-1" style="padding:28px 24px; max-width:1200px; margin:0 auto; width:100%; box-sizing:border-box;">
 
-        <!-- Alertas -->
-        <div th:if="${success}" class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded"
-             th:text="${success}"></div>
-        <div th:if="${error}" class="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded"
-             th:text="${error}"></div>
+<!-- Alerts -->
+<div th:if="${success}" style="background:#dcfce7; border-bottom:1px solid #86efac; color:#166534; padding:10px 32px; font-size:13px; font-weight:600;" th:text="${success}"></div>
+<div th:if="${error}"   style="background:#fee2e2; border-bottom:1px solid #fca5a5; color:#991b1b; padding:10px 32px; font-size:13px; font-weight:600;" th:text="${error}"></div>
 
-        <!-- Formulario de creación -->
-        <div class="bg-white rounded-xl shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Nuevo Plano</h2>
-            <form method="post" action="/plano-sala/guardar" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+<!-- ===== EDITOR ROW ===== -->
+<div style="display:flex; flex:1; min-height:0; height:calc(100vh - 130px); overflow:hidden; border-top:1px solid #e2e8f0;">
 
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Sala <span class="text-red-600">*</span></label>
-                    <select name="salaId" required class="w-full px-3 py-2 border rounded">
-                        <option value="">Seleccione sala</option>
-                        <option th:each="sala : ${salas}"
-                                th:value="${sala.id}"
-                                th:text="${sala.sitio.nombre + ' › ' + sala.nombre}"></option>
-                    </select>
-                </div>
+  <!-- ===== SIDEBAR ===== -->
+  <aside style="width:272px; min-width:272px; background:#fff; border-right:1px solid #e2e8f0; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px; box-shadow:2px 0 8px rgba(0,0,0,0.04);">
 
-                <div>
-                    <label class="block text-sm font-semibold mb-1">
-                        Columnas (Oeste→Este) <span class="text-gray-500 text-xs">letras A, B, C…</span>
-                    </label>
-                    <div class="flex items-center gap-2">
-                        <input type="number" name="cantidadColumnas" min="1" max="100" required
-                               placeholder="Ej: 18"
-                               class="w-full px-3 py-2 border rounded">
-                        <span class="text-xs text-gray-500 whitespace-nowrap">× 60 cm</span>
-                    </div>
-                </div>
+    <!-- Sala Selection -->
+    <div style="background:#f8fafc; border-radius:10px; padding:12px; border:1px solid #e2e8f0;">
+      <div style="font-size:10px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">📍 Seleccionar Sala</div>
+      <div style="margin-bottom:8px;">
+        <label style="display:block; font-size:12px; font-weight:600; color:#374151; margin-bottom:4px;">Sitio</label>
+        <select id="sitioSelect" onchange="onSitioChange()" style="width:100%; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; color:#111827; background:#fff;">
+          <option value="">— Seleccione sitio —</option>
+          <!-- populated by JS from sala options below -->
+        </select>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:#374151; margin-bottom:4px;">Sala</label>
+        <select id="salaSelect" onchange="onSalaChange()" style="width:100%; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; color:#111827; background:#fff;">
+          <option value="">— Seleccione sala —</option>
+          <option th:each="s : ${salas}"
+                  th:value="${s.id}"
+                  th:attr="data-sitio-id=${s.sitio.id}, data-sitio-nombre=${s.sitio.nombre}"
+                  th:text="${s.nombre}"></option>
+        </select>
+      </div>
+    </div>
 
-                <div>
-                    <label class="block text-sm font-semibold mb-1">
-                        Filas (Norte→Sur) <span class="text-gray-500 text-xs">números 1, 2, 3…</span>
-                    </label>
-                    <div class="flex items-center gap-2">
-                        <input type="number" name="cantidadFilas" min="1" max="100" required
-                               placeholder="Ej: 19"
-                               class="w-full px-3 py-2 border rounded">
-                        <span class="text-xs text-gray-500 whitespace-nowrap">× 60 cm</span>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Descripción</label>
-                    <input type="text" name="descripcion" maxlength="255" placeholder="Opcional"
-                           class="w-full px-3 py-2 border rounded">
-                </div>
-
-                <div class="md:col-span-2 lg:col-span-4 flex justify-end">
-                    <button type="submit"
-                            class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded font-semibold">
-                        Crear Plano
-                    </button>
-                </div>
-            </form>
+    <!-- Dimensions -->
+    <div style="background:#f8fafc; border-radius:10px; padding:12px; border:1px solid #e2e8f0;">
+      <div style="font-size:10px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">📐 Dimensiones (metros)</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Norte (↑)</label>
+          <input id="northMeters" type="number" value="10.8" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
         </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Sur (↓)</label>
+          <input id="southMeters" type="number" value="10.8" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Oeste (←)</label>
+          <input id="westMeters" type="number" value="9.0" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Este (→)</label>
+          <input id="eastMeters" type="number" value="9.0" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+        </div>
+      </div>
+      <div style="margin-top:8px; background:#eff6ff; border-radius:6px; padding:6px 10px; font-size:12px; color:#1d4ed8; font-weight:700; text-align:center;">
+        Palmetas 60×60 cm: <span id="gridSizeLabel">18 × 15</span>
+      </div>
+    </div>
 
-        <!-- Lista de planos existentes -->
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-            <div class="px-6 py-4 border-b">
-                <h2 class="text-xl font-semibold">Planos Creados</h2>
+    <!-- Tools / Legend -->
+    <div>
+      <div style="font-size:10px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">🔧 Herramientas</div>
+      <div id="toolsList" style="display:flex; flex-direction:column; gap:3px;"></div>
+    </div>
+
+    <!-- Mold Panel -->
+    <div id="moldPanel" style="display:none; background:#eef2ff; border-radius:10px; padding:12px; border:1px solid #c7d2fe;">
+      <div style="font-size:12px; font-weight:700; color:#4338ca; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+        ✥ Moldeando: <span id="moldCoordLabel" style="background:#c7d2fe; padding:1px 7px; border-radius:4px; font-size:12px;"></span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div>
+          <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Norte (Arriba)</span><span id="moldNorteVal" style="color:#4338ca; font-weight:700;"></span></label>
+          <input type="range" id="moldNorte" min="-150" max="95" step="5" value="5" oninput="onMoldChange('norte', this.value)" style="width:100%; accent-color:#6366f1;">
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Sur (Abajo)</span><span id="moldSurVal" style="color:#4338ca; font-weight:700;"></span></label>
+          <input type="range" id="moldSur" min="-150" max="95" step="5" value="5" oninput="onMoldChange('sur', this.value)" style="width:100%; accent-color:#6366f1;">
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Oeste (Izq)</span><span id="moldOesteVal" style="color:#4338ca; font-weight:700;"></span></label>
+          <input type="range" id="moldOeste" min="-150" max="95" step="5" value="5" oninput="onMoldChange('oeste', this.value)" style="width:100%; accent-color:#6366f1;">
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Este (Der)</span><span id="moldEsteVal" style="color:#4338ca; font-weight:700;"></span></label>
+          <input type="range" id="moldEste" min="-150" max="95" step="5" value="5" oninput="onMoldChange('este', this.value)" style="width:100%; accent-color:#6366f1;">
+        </div>
+      </div>
+      <p style="font-size:10px; color:#6366f1; margin-top:8px; line-height:1.5;">
+        * Negativos expanden hacia palmetas vecinas. Positivos encogen hacia el interior.
+      </p>
+    </div>
+
+  </aside>
+
+  <!-- ===== GRID AREA ===== -->
+  <div id="gridScrollArea" style="flex:1; overflow:auto; background:#d1d5db; padding:28px;" onmouseup="onMouseUp()" onmouseleave="onMouseUp()">
+    <div style="background:#fff; padding:24px; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.1); display:inline-block; min-width:100%; box-sizing:border-box;">
+      <div id="gridWrapper">
+        <div style="text-align:center; padding:48px; color:#9ca3af; font-size:14px; font-weight:500;">
+          Seleccione un sitio y sala para comenzar a editar el plano.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /editor row -->
+
+<!-- ===== PLANOS GUARDADOS ===== -->
+<div style="padding:24px 32px; max-width:1400px; margin:0 auto; width:100%; box-sizing:border-box;">
+  <div style="background:#fff; border-radius:14px; border:1px solid rgba(11,60,117,0.08); box-shadow:0 2px 8px rgba(0,0,0,0.06); overflow:hidden;">
+    <div style="padding:14px 24px; border-bottom:1px solid #e2e8f0;">
+      <span style="font-size:14px; font-weight:700; color:#0b3c75;">📋 Planos Guardados</span>
+    </div>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead style="background:linear-gradient(90deg,#1e3a5f,#0b3c75); color:#fff;">
+        <tr>
+          <th style="padding:10px 16px; text-align:left; font-weight:600;">Sitio</th>
+          <th style="padding:10px 16px; text-align:left; font-weight:600;">Sala</th>
+          <th style="padding:10px 16px; text-align:center; font-weight:600;">Cols</th>
+          <th style="padding:10px 16px; text-align:center; font-weight:600;">Filas</th>
+          <th style="padding:10px 16px; text-align:center; font-weight:600;">Dimensiones (m)</th>
+          <th style="padding:10px 16px; text-align:center; font-weight:600;">Área (m²)</th>
+          <th style="padding:10px 16px; text-align:center; font-weight:600;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${planos}" style="border-bottom:1px solid #f0f4f8;">
+          <td style="padding:10px 16px;" th:text="${p.sala?.sitio?.nombre}">-</td>
+          <td style="padding:10px 16px; font-weight:600;" th:text="${p.sala?.nombre}">-</td>
+          <td style="padding:10px 16px; text-align:center; font-family:monospace;" th:text="${p.cantidadColumnas}">-</td>
+          <td style="padding:10px 16px; text-align:center; font-family:monospace;" th:text="${p.cantidadFilas}">-</td>
+          <td style="padding:10px 16px; text-align:center; font-size:12px; color:#374151; font-family:monospace;"
+              th:text="${#numbers.formatDecimal(p.cantidadColumnas * 0.6, 1, 1)} + ' × ' + ${#numbers.formatDecimal(p.cantidadFilas * 0.6, 1, 1)}">-</td>
+          <td style="padding:10px 16px; text-align:center; font-weight:700; color:#1d4ed8;"
+              th:text="${#numbers.formatDecimal(p.cantidadColumnas * 0.6 * p.cantidadFilas * 0.6, 1, 2)} + ' m²'">-</td>
+          <td style="padding:10px 16px; text-align:center;">
+            <div style="display:flex; justify-content:center; gap:8px;">
+              <a th:href="@{/plano-sala/{id}(id=${p.id})}" style="background:#1d4ed8; color:#fff; padding:4px 12px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:600;">🗺️ Ver</a>
+              <a th:href="@{/plano-sala/eliminar/{id}(id=${p.id})}" onclick="return confirm('¿Eliminar este plano?')" style="background:#dc2626; color:#fff; padding:4px 12px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:600;">🗑️</a>
             </div>
-            <table class="w-full text-sm">
-                <thead class="bg-blue-600 text-white">
-                    <tr>
-                        <th class="px-4 py-3 text-left">Sitio</th>
-                        <th class="px-4 py-3 text-left">Sala</th>
-                        <th class="px-4 py-3 text-center">Columnas</th>
-                        <th class="px-4 py-3 text-center">Filas</th>
-                        <th class="px-4 py-3 text-center">Dimensiones (m)</th>
-                        <th class="px-4 py-3 text-center">Área (m²)</th>
-                        <th class="px-4 py-3 text-left">Descripción</th>
-                        <th class="px-4 py-3 text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="p : ${planos}" class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-3" th:text="${p.sala?.sitio?.nombre}">-</td>
-                        <td class="px-4 py-3 font-semibold" th:text="${p.sala?.nombre}">-</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="font-mono" th:text="${p.cantidadColumnas}"></span>
-                            <span class="text-gray-500 text-xs" th:text="' (' + (p.cantidadColumnas * 0.6) + ' m)'"></span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="font-mono" th:text="${p.cantidadFilas}"></span>
-                            <span class="text-gray-500 text-xs" th:text="' (' + (p.cantidadFilas * 0.6) + ' m)'"></span>
-                        </td>
-                        <td class="px-4 py-3 text-center text-xs font-mono text-gray-700"
-                            th:text="${#numbers.formatDecimal(p.cantidadColumnas * 0.6, 1, 1)} + ' × ' + ${#numbers.formatDecimal(p.cantidadFilas * 0.6, 1, 1)}"></td>
-                        <td class="px-4 py-3 text-center font-semibold text-blue-700"
-                            th:text="${#numbers.formatDecimal(p.cantidadColumnas * 0.6 * p.cantidadFilas * 0.6, 1, 2)} + ' m²'"></td>
-                        <td class="px-4 py-3 text-gray-600" th:text="${p.descripcion ?: '-'}">-</td>
-                        <td class="px-4 py-3 text-center">
-                            <div class="flex justify-center gap-2">
-                                <a th:href="@{/plano-sala/{id}(id=${p.id})}"
-                                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs">
-                                    🗺️ Ver Plano
-                                </a>
-                                <a th:href="@{/plano-sala/eliminar/{id}(id=${p.id})}"
-                                   onclick="return confirm('¿Eliminar este plano?')"
-                                   class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
-                                    🗑️
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(planos)}">
-                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-                            No hay planos creados aún. Cree el primero arriba.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-</main>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(planos)}">
+          <td colspan="7" style="padding:32px; text-align:center; color:#9ca3af;">No hay planos guardados aún. Seleccione una sala y dibuje el plano arriba.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<!-- Hidden save form -->
+<form id="saveForm" method="post" action="/plano-sala/guardar" style="display:none;">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+  <input type="hidden" name="salaId"           id="formSalaId">
+  <input type="hidden" name="cantidadColumnas" id="formCols">
+  <input type="hidden" name="cantidadFilas"    id="formFilas">
+  <input type="hidden" name="descripcion"      id="formDesc" value="">
+</form>
+
+<!-- =============================================
+     EDITOR DE PLANO — Piso de Palmetas 60×60 cm
+     ============================================= -->
+<script>
+const TILE_SIZE = 0.6;
+
+const ITEM_TYPES = [
+  { id: 'utilizada',       label: 'Posición utilizada',      bg: '#2563eb',     border: '1px solid #1e40af',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'libre',           label: 'Posición libre',           bg: '#dcfce7',     border: '2px solid #22c55e',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'fm200',           label: 'Sistema FM200',            bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'FM', tc: '#fff',    scale: false },
+  { id: 'borrar',          label: 'Goma de borrar (Quitar)',  bg: 'transparent', border: '2px dashed #d1d5db',   br: '3px', text: '✕',  tc: '#9ca3af', scale: false },
+  { id: 'editar',          label: 'Moldear (Ajustar tamaño)', bg: '#e0e7ff',     border: '2px dashed #6366f1',   br: '3px', text: '✥',  tc: '#6366f1', scale: false }
+];
+
+// ── State ────────────────────────────────────────
+let gridData      = {};
+let activeTool    = 'utilizada';
+let isDrawing     = false;
+let selectedCoord = null;
+let northMeters   = 10.8;
+let southMeters   = 10.8;
+let eastMeters    = 9.0;
+let westMeters    = 9.0;
+let currentSalaId = null;
+
+// ── Boot ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  buildSitioSelect();
+  buildToolsList();
+  updateGridSizeLabel();
+});
+
+// ── Cascade: Sitio → Sala ────────────────────────
+function buildSitioSelect () {
+  var opts     = document.querySelectorAll('#salaSelect option[data-sitio-id]');
+  var sitioMap = {};
+  opts.forEach(function (o) {
+    var id = o.getAttribute('data-sitio-id');
+    var nm = o.getAttribute('data-sitio-nombre');
+    if (id && !sitioMap[id]) sitioMap[id] = nm;
+  });
+  var sel = document.getElementById('sitioSelect');
+  Object.entries(sitioMap)
+    .sort(function (a, b) { return a[1].localeCompare(b[1]); })
+    .forEach(function (entry) {
+      var opt = document.createElement('option');
+      opt.value = entry[0];
+      opt.textContent = entry[1];
+      sel.appendChild(opt);
+    });
+}
+
+function onSitioChange () {
+  var sitioId = document.getElementById('sitioSelect').value;
+  document.querySelectorAll('#salaSelect option[data-sitio-id]').forEach(function (o) {
+    o.hidden = sitioId ? o.getAttribute('data-sitio-id') !== sitioId : false;
+  });
+  document.getElementById('salaSelect').value = '';
+  onSalaChange();
+}
+
+function onSalaChange () {
+  var salaId    = document.getElementById('salaSelect').value;
+  currentSalaId = salaId || null;
+  selectedCoord = null;
+  if (salaId) {
+    try { gridData = JSON.parse(localStorage.getItem('planoGrid_' + salaId) || '{}'); }
+    catch (e) { gridData = {}; }
+  } else {
+    gridData = {};
+  }
+  updateMoldPanel();
+  renderGrid();
+}
+
+// ── Dimensions ───────────────────────────────────
+function onDimChange () {
+  northMeters = Math.max(0.6, parseFloat(document.getElementById('northMeters').value) || 0.6);
+  southMeters = Math.max(0.6, parseFloat(document.getElementById('southMeters').value) || 0.6);
+  westMeters  = Math.max(0.6, parseFloat(document.getElementById('westMeters').value)  || 0.6);
+  eastMeters  = Math.max(0.6, parseFloat(document.getElementById('eastMeters').value)  || 0.6);
+  updateGridSizeLabel();
+  renderGrid();
+}
+
+function getCols () { return Math.ceil(Math.max(northMeters, southMeters) / TILE_SIZE); }
+function getRows () { return Math.ceil(Math.max(eastMeters,  westMeters)  / TILE_SIZE); }
+
+function updateGridSizeLabel () {
+  document.getElementById('gridSizeLabel').textContent = getCols() + ' × ' + getRows();
+}
+
+// ── Tools List ───────────────────────────────────
+function buildToolsList () {
+  var container = document.getElementById('toolsList');
+  container.innerHTML = '';
+  ITEM_TYPES.forEach(function (tool) {
+    var btn = document.createElement('button');
+    btn.id   = 'toolBtn_' + tool.id;
+    btn.type = 'button';
+    btn.onclick = function () { selectTool(tool.id); };
+    btn.style.cssText = 'display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:8px; border:2px solid transparent; cursor:pointer; background:transparent; width:100%; text-align:left;';
+
+    var swatch = document.createElement('div');
+    swatch.style.cssText = 'width:26px; height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; background:' + tool.bg + '; border:' + tool.border + '; border-radius:' + (tool.scale ? '50%' : tool.br) + '; color:' + tool.tc + '; ' + (tool.scale ? 'transform:scale(0.85);' : '');
+    swatch.textContent = tool.text;
+
+    var lbl = document.createElement('span');
+    lbl.style.cssText = 'font-size:12px; font-weight:500; color:#374151;';
+    lbl.textContent = tool.label;
+
+    btn.appendChild(swatch);
+    btn.appendChild(lbl);
+    container.appendChild(btn);
+  });
+  highlightActiveTool();
+}
+
+function selectTool (toolId) {
+  activeTool = toolId;
+  if (toolId !== 'editar') { selectedCoord = null; updateMoldPanel(); }
+  highlightActiveTool();
+}
+
+function highlightActiveTool () {
+  ITEM_TYPES.forEach(function (t) {
+    var btn = document.getElementById('toolBtn_' + t.id);
+    if (!btn) return;
+    btn.style.borderColor = t.id === activeTool ? '#3b82f6' : 'transparent';
+    btn.style.background  = t.id === activeTool ? '#eff6ff' : 'transparent';
+  });
+}
+
+// ── Column Letter Helper ─────────────────────────
+function getColLetter (col) {
+  var s = '', i = col;
+  while (i >= 0) { s = String.fromCharCode((i % 26) + 65) + s; i = Math.floor(i / 26) - 1; }
+  return s;
+}
+
+// ── Grid Render ──────────────────────────────────
+function renderGrid () {
+  updateGridSizeLabel();
+  var wrapper = document.getElementById('gridWrapper');
+
+  if (!currentSalaId) {
+    wrapper.innerHTML = '<div style="text-align:center; padding:48px; color:#9ca3af; font-size:14px; font-weight:500;">Seleccione un sitio y sala para comenzar a editar el plano.</div>';
+    return;
+  }
+
+  var cols = getCols(), rows = getRows();
+  var CELL = 48, HDR = 36;
+  var h = '';
+
+  h += '<div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:8px; user-select:none;">';
+
+  // North
+  h += '<div style="display:flex; align-items:center; gap:10px;">'
+     + '<div style="color:#2563eb; font-weight:700; font-size:12px; background:#eff6ff; padding:4px 14px; border-radius:999px; border:1px solid #bfdbfe;">Ancho: ' + northMeters + 'm</div>'
+     + '<span style="color:#9ca3af; font-size:10px; font-weight:700; letter-spacing:.1em;">NORTE ↑</span>'
+     + '</div>';
+
+  // Middle row
+  h += '<div style="display:flex; align-items:center; gap:10px;">';
+
+  // West
+  h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">'
+     + '<span style="color:#9ca3af; font-size:9px; font-weight:700; writing-mode:vertical-rl; transform:rotate(180deg); letter-spacing:.08em;">← OESTE</span>'
+     + '<div style="writing-mode:vertical-rl; transform:rotate(180deg); color:#2563eb; font-weight:700; font-size:11px; background:#eff6ff; padding:8px 5px; border-radius:999px; border:1px solid #bfdbfe;">Largo: ' + westMeters + 'm</div>'
+     + '</div>';
+
+  // Grid
+  h += '<div id="theGrid" style="display:grid; grid-template-columns:' + HDR + 'px repeat(' + cols + ', ' + CELL + 'px); gap:1px; background:#e5e7eb; border:2px solid #9ca3af; cursor:crosshair;">';
+
+  // Corner
+  h += '<div style="width:' + HDR + 'px; height:30px; background:#f3f4f6; border-bottom:2px solid #d1d5db; border-right:2px solid #d1d5db;"></div>';
+
+  // Column headers
+  for (var c = 0; c < cols; c++) {
+    h += '<div style="height:30px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-weight:700; color:#374151; border-bottom:2px solid #d1d5db; font-size:11px;">' + getColLetter(c) + '</div>';
+  }
+
+  // Rows
+  for (var r = 0; r < rows; r++) {
+    h += '<div style="width:' + HDR + 'px; height:' + CELL + 'px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-weight:700; color:#374151; border-right:2px solid #d1d5db; font-size:11px;">' + (r+1) + '</div>';
+    for (var cc = 0; cc < cols; cc++) {
+      var coord = getColLetter(cc) + '-' + (r+1);
+      var cd    = gridData[coord];
+      var isSel = selectedCoord === coord;
+      var inner = cd ? cellInnerHTML(cd, isSel) : '';
+      h += '<div data-coord="' + coord + '" style="width:' + CELL + 'px; height:' + CELL + 'px; background:#f9fafb; position:relative; box-shadow:inset 1px 1px 3px rgba(0,0,0,0.08);' + (isSel ? ' outline:2px solid #6366f1; outline-offset:-2px;' : '') + '">' + inner + '</div>';
+    }
+  }
+
+  h += '</div>'; // theGrid
+
+  // East
+  h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">'
+     + '<span style="color:#9ca3af; font-size:9px; font-weight:700; writing-mode:vertical-rl; letter-spacing:.08em;">ESTE →</span>'
+     + '<div style="writing-mode:vertical-rl; color:#2563eb; font-weight:700; font-size:11px; background:#eff6ff; padding:8px 5px; border-radius:999px; border:1px solid #bfdbfe;">Largo: ' + eastMeters + 'm</div>'
+     + '</div>';
+
+  h += '</div>'; // middle row
+
+  // South
+  h += '<div style="display:flex; align-items:center; gap:10px;">'
+     + '<span style="color:#9ca3af; font-size:10px; font-weight:700; letter-spacing:.1em;">SUR ↓</span>'
+     + '<div style="color:#2563eb; font-weight:700; font-size:12px; background:#eff6ff; padding:4px 14px; border-radius:999px; border:1px solid #bfdbfe;">Ancho: ' + southMeters + 'm</div>'
+     + '</div>';
+
+  h += '</div>'; // flex col
+  wrapper.innerHTML = h;
+
+  // Event delegation
+  var grid = document.getElementById('theGrid');
+  if (grid) {
+    grid.addEventListener('mousedown', onGridMouseDown);
+    grid.addEventListener('mouseover', onGridMouseOver);
+  }
+}
+
+function cellInnerHTML (cd, isSel) {
+  var tool = null;
+  for (var i = 0; i < ITEM_TYPES.length; i++) { if (ITEM_TYPES[i].id === cd.type) { tool = ITEM_TYPES[i]; break; } }
+  if (!tool) return '';
+  var top    = cd.norte !== undefined ? cd.norte : 5;
+  var bottom = cd.sur   !== undefined ? cd.sur   : 5;
+  var left   = cd.oeste !== undefined ? cd.oeste : 5;
+  var right  = cd.este  !== undefined ? cd.este  : 5;
+  return '<div style="position:absolute; top:' + top + '%; bottom:' + bottom + '%; left:' + left + '%; right:' + right + '%; background:' + tool.bg + '; border:' + tool.border + '; border-radius:' + (tool.scale ? '50%' : tool.br) + '; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; color:' + tool.tc + '; z-index:' + (isSel ? 50 : 10) + '; ' + (tool.scale ? 'transform:scale(0.75);' : '') + ' pointer-events:none;">' + tool.text + '</div>';
+}
+
+// ── Event Delegation ─────────────────────────────
+function onGridMouseDown (e) {
+  var cell = e.target.closest ? e.target.closest('[data-coord]') : null;
+  if (!cell) return;
+  e.preventDefault();
+  isDrawing = true;
+  handleTile(cell.getAttribute('data-coord'), true);
+}
+
+function onGridMouseOver (e) {
+  if (!isDrawing || activeTool === 'editar') return;
+  var cell = e.target.closest ? e.target.closest('[data-coord]') : null;
+  if (cell) handleTile(cell.getAttribute('data-coord'), false);
+}
+
+function onMouseUp () { isDrawing = false; }
+
+function handleTile (coord, isClick) {
+  if (activeTool === 'editar') {
+    if (isClick) {
+      var prev = selectedCoord;
+      selectedCoord = (gridData[coord] && selectedCoord !== coord) ? coord : null;
+      updateMoldPanel();
+      refreshCell(coord);
+      if (prev && prev !== coord) refreshCell(prev);
+    }
+    return;
+  }
+  if (activeTool === 'borrar') {
+    if (gridData[coord]) {
+      delete gridData[coord];
+      if (selectedCoord === coord) { selectedCoord = null; updateMoldPanel(); }
+      refreshCell(coord);
+      persist();
+    }
+  } else {
+    var existing = gridData[coord];
+    gridData[coord] = {
+      type:  activeTool,
+      norte: existing ? existing.norte : 5,
+      sur:   existing ? existing.sur   : 5,
+      oeste: existing ? existing.oeste : 5,
+      este:  existing ? existing.este  : 5
+    };
+    refreshCell(coord);
+    persist();
+  }
+}
+
+function refreshCell (coord) {
+  var cell = document.querySelector('[data-coord="' + coord + '"]');
+  if (!cell) return;
+  var cd    = gridData[coord];
+  var isSel = selectedCoord === coord;
+  cell.style.outline       = isSel ? '2px solid #6366f1' : '';
+  cell.style.outlineOffset = isSel ? '-2px' : '';
+  cell.innerHTML           = cd ? cellInnerHTML(cd, isSel) : '';
+}
+
+// ── Mold Panel ───────────────────────────────────
+function updateMoldPanel () {
+  var panel = document.getElementById('moldPanel');
+  if (!selectedCoord || !gridData[selectedCoord] || activeTool !== 'editar') {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  var d     = gridData[selectedCoord];
+  var norte = d.norte !== undefined ? d.norte : 5;
+  var sur   = d.sur   !== undefined ? d.sur   : 5;
+  var oeste = d.oeste !== undefined ? d.oeste : 5;
+  var este  = d.este  !== undefined ? d.este  : 5;
+
+  document.getElementById('moldCoordLabel').textContent = selectedCoord;
+  document.getElementById('moldNorte').value = norte;
+  document.getElementById('moldSur').value   = sur;
+  document.getElementById('moldOeste').value = oeste;
+  document.getElementById('moldEste').value  = este;
+  document.getElementById('moldNorteVal').textContent = Math.round(norte * 0.6) + ' cm';
+  document.getElementById('moldSurVal').textContent   = Math.round(sur   * 0.6) + ' cm';
+  document.getElementById('moldOesteVal').textContent = Math.round(oeste * 0.6) + ' cm';
+  document.getElementById('moldEsteVal').textContent  = Math.round(este  * 0.6) + ' cm';
+}
+
+function onMoldChange (field, value) {
+  if (!selectedCoord || !gridData[selectedCoord]) return;
+  gridData[selectedCoord][field] = Number(value);
+  var keyMap = { norte:'moldNorteVal', sur:'moldSurVal', oeste:'moldOesteVal', este:'moldEsteVal' };
+  var el = document.getElementById(keyMap[field]);
+  if (el) el.textContent = Math.round(Number(value) * 0.6) + ' cm';
+  refreshCell(selectedCoord);
+  persist();
+}
+
+// ── localStorage ─────────────────────────────────
+function persist () {
+  if (!currentSalaId) return;
+  try { localStorage.setItem('planoGrid_' + currentSalaId, JSON.stringify(gridData)); } catch (e) {}
+}
+
+// ── Save to Backend ───────────────────────────────
+function savePlano () {
+  if (!currentSalaId) { alert('Seleccione una sala primero.'); return; }
+  document.getElementById('formSalaId').value = currentSalaId;
+  document.getElementById('formCols').value   = getCols();
+  document.getElementById('formFilas').value  = getRows();
+  document.getElementById('saveForm').submit();
+}
+
+// ── Clear ─────────────────────────────────────────
+function clearGrid () {
+  if (!confirm('¿Limpiar todo el plano?')) return;
+  gridData = {};
+  selectedCoord = null;
+  updateMoldPanel();
+  persist();
+  renderGrid();
+}
+</script>
+
 </body>
 </html>

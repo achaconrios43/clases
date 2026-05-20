@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/headers :: headers}"></head>
+<body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background:#f1f5f9;">
+<nav th:replace="~{fragments/navdar :: nav}"></nav>
+
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#1e3a5f,#0b3c75); padding:14px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.18);">
+  <div style="display:flex; align-items:center; gap:14px;">
+    <a href="/plano-sala" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Planos</a>
+    <span style="color:rgba(255,255,255,0.35);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">🗺️ Crear Layout de Sala</span>
+    <span id="headerSalaLabel" style="background:rgba(255,255,255,0.12); color:#93c5fd; font-size:12px; font-weight:700; padding:3px 12px; border-radius:999px; border:1px solid rgba(255,255,255,0.2); display:none;"></span>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center;" id="headerActions">
+    <button id="btnGuardarImagen" onclick="guardarComoImagen()" style="display:none; background:rgba(16,185,129,0.25); color:#6ee7b7; border:1px solid rgba(16,185,129,0.4); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; gap:6px; align-items:center;">📷 Guardar como Imagen</button>
+    <button id="btnLimpiarHeader" onclick="clearGrid()" style="display:none; background:rgba(220,38,38,0.3); color:#fca5a5; border:1px solid rgba(220,38,38,0.35); padding:7px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">🗑️ Limpiar</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     STEP 1: Selección de Sala  (visible antes de crear layout)
+     ============================================================ -->
+<div id="selectorPanel" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 120px); padding:32px 16px;">
+
+  <div style="background:#fff; border-radius:20px; box-shadow:0 8px 40px rgba(11,60,117,0.14); border:1px solid #e2e8f0; padding:40px 48px; max-width:560px; width:100%; text-align:center;">
+
+    <!-- Icon + Title -->
+    <div style="width:72px; height:72px; background:linear-gradient(135deg,#1e3a5f,#0b3c75); border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 20px;">🗺️</div>
+    <h1 style="font-size:22px; font-weight:800; color:#0b3c75; margin:0 0 6px;">Crear Layout de Sala</h1>
+    <p style="color:#6b7280; font-size:14px; margin:0 0 32px; line-height:1.6;">Seleccione el sitio y la sala para comenzar a diseñar el plano de piso técnico (palmetas 60×60 cm).</p>
+
+    <!-- Sitio -->
+    <div style="text-align:left; margin-bottom:16px;">
+      <label style="display:block; font-size:12px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">📍 Sitio</label>
+      <select id="sitioSelectMain" onchange="onSitioChangeMain()" style="width:100%; padding:10px 14px; border:1.5px solid #d1d5db; border-radius:10px; font-size:14px; color:#111827; background:#f8fafc; outline:none;">
+        <option value="">— Seleccione sitio —</option>
+      </select>
+    </div>
+
+    <!-- Sala -->
+    <div style="text-align:left; margin-bottom:28px;">
+      <label style="display:block; font-size:12px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">🏢 Sala</label>
+      <select id="salaSelectMain" style="width:100%; padding:10px 14px; border:1.5px solid #d1d5db; border-radius:10px; font-size:14px; color:#111827; background:#f8fafc; outline:none;">
+        <option value="">— Primero seleccione sitio —</option>
+        <!-- All sala options; hidden by JS until sitio selected -->
+        <option th:each="s : ${salas}"
+                th:value="${s.id}"
+                th:attr="data-sitio-id=${s.sitio.id}, data-sitio-nombre=${s.sitio.nombre}, data-sala-nombre=${s.nombre}"
+                th:text="${s.nombre}"
+                style="display:none;"></option>
+      </select>
+    </div>
+
+    <!-- Crear Layout Button -->
+    <button onclick="crearLayout()" style="width:100%; background:linear-gradient(135deg,#1e3a5f,#0b3c75); color:#fff; border:none; padding:14px 24px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 4px 16px rgba(11,60,117,0.3); transition:opacity .15s;">
+      🏗️ Crear Layout
+    </button>
+
+    <p style="margin-top:16px; font-size:12px; color:#9ca3af;">El layout se guarda en el navegador hasta que lo exporten como imagen.</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     EDITOR  (oculto hasta presionar "Crear Layout")
+     ============================================================ -->
+<div id="editorPanel" style="display:none; flex:1; min-height:0; height:calc(100vh - 56px); overflow:hidden; border-top:1px solid #e2e8f0;">
+
+  <!-- Flex row: Sidebar + Grid -->
+  <div style="display:flex; height:100%;">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside style="width:268px; min-width:268px; background:#fff; border-right:1px solid #e2e8f0; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px; box-shadow:2px 0 8px rgba(0,0,0,0.04);">
+
+      <!-- Sala seleccionada (info card) -->
+      <div id="sidebarSalaCard" style="background:linear-gradient(135deg,#eff6ff,#dbeafe); border-radius:10px; padding:12px; border:1px solid #bfdbfe;">
+        <div style="font-size:10px; font-weight:700; color:#1d4ed8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Sala activa</div>
+        <div id="sidebarSalaName" style="font-size:14px; font-weight:700; color:#1e3a5f;"></div>
+        <div id="sidebarSitioName" style="font-size:11px; color:#6b7280; margin-top:1px;"></div>
+        <button onclick="volverSelector()" style="margin-top:8px; font-size:11px; color:#3b82f6; background:none; border:none; cursor:pointer; padding:0; font-weight:600;">⟵ Cambiar sala</button>
+      </div>
+
+      <!-- Dimensions -->
+      <div style="background:#f8fafc; border-radius:10px; padding:12px; border:1px solid #e2e8f0;">
+        <div style="font-size:10px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">📐 Dimensiones (metros)</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Norte (↑)</label>
+            <input id="northMeters" type="number" value="13.4" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Sur (↓)</label>
+            <input id="southMeters" type="number" value="13.3" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Oeste (←)</label>
+            <input id="westMeters" type="number" value="9.0" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:600; color:#6b7280; margin-bottom:3px;">Este (→)</label>
+            <input id="eastMeters" type="number" value="9.0" min="0.6" step="0.6" oninput="onDimChange()" style="width:100%; box-sizing:border-box; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+          </div>
+        </div>
+        <div style="margin-top:8px; background:#eff6ff; border-radius:6px; padding:6px 10px; font-size:12px; color:#1d4ed8; font-weight:700; text-align:center;">
+          Palmetas 60×60 cm: <span id="gridSizeLabel">22 × 15</span>
+        </div>
+      </div>
+
+      <!-- Herramientas -->
+      <div>
+        <div style="font-size:10px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">🔧 Herramientas</div>
+        <div id="toolsList" style="display:flex; flex-direction:column; gap:3px;"></div>
+      </div>
+
+      <!-- Mold Panel -->
+      <div id="moldPanel" style="display:none; background:#eef2ff; border-radius:10px; padding:12px; border:1px solid #c7d2fe;">
+        <div style="font-size:12px; font-weight:700; color:#4338ca; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          ✥ Moldeando: <span id="moldCoordLabel" style="background:#c7d2fe; padding:1px 7px; border-radius:4px; font-size:12px;"></span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Norte (Arriba)</span><span id="moldNorteVal" style="color:#4338ca; font-weight:700;"></span></label>
+            <input type="range" id="moldNorte" min="-150" max="95" step="5" value="5" oninput="onMoldChange('norte', this.value)" style="width:100%; accent-color:#6366f1;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Sur (Abajo)</span><span id="moldSurVal" style="color:#4338ca; font-weight:700;"></span></label>
+            <input type="range" id="moldSur" min="-150" max="95" step="5" value="5" oninput="onMoldChange('sur', this.value)" style="width:100%; accent-color:#6366f1;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Oeste (Izq)</span><span id="moldOesteVal" style="color:#4338ca; font-weight:700;"></span></label>
+            <input type="range" id="moldOeste" min="-150" max="95" step="5" value="5" oninput="onMoldChange('oeste', this.value)" style="width:100%; accent-color:#6366f1;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Este (Der)</span><span id="moldEsteVal" style="color:#4338ca; font-weight:700;"></span></label>
+            <input type="range" id="moldEste" min="-150" max="95" step="5" value="5" oninput="onMoldChange('este', this.value)" style="width:100%; accent-color:#6366f1;">
+          </div>
+        </div>
+        <p style="font-size:10px; color:#6366f1; margin-top:8px; line-height:1.5;">
+          * Negativos expanden hacia palmetas vecinas. Positivos encogen hacia el interior.
+        </p>
+      </div>
+
+    </aside>
+
+    <!-- ===== GRID SCROLL AREA ===== -->
+    <div id="gridScrollArea" style="flex:1; overflow:auto; background:#e2e8f0; padding:32px;" onmouseup="onMouseUp()" onmouseleave="onMouseUp()">
+      <div style="background:#fff; padding:28px; border-radius:14px; box-shadow:0 4px 24px rgba(0,0,0,0.1); display:inline-block; min-width:100%; box-sizing:border-box;">
+        <div id="gridWrapper"></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /editorPanel -->
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<!-- html2canvas for image export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+
+<!-- =============================================
+     LAYOUT EDITOR — Vanilla JS
+     ============================================= -->
+<script>
+// ── Constants ────────────────────────────────────
+var TILE_SIZE = 0.6;
+
+var ITEM_TYPES = [
+  { id: 'utilizada',       label: 'Posición utilizada',      bg: '#2563eb',     border: '1px solid #1e40af',    br: '3px', text: '',   tc: '#fff',    scale: false },
+  { id: 'libre',           label: 'Posición libre',           bg: '#dcfce7',     border: '2px solid #22c55e',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'fm200',           label: 'Sistema FM200',            bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'FM', tc: '#fff',    scale: false },
+  { id: 'borrar',          label: 'Goma de borrar (Quitar)',  bg: 'transparent', border: '2px dashed #d1d5db',   br: '3px', text: '✕',  tc: '#9ca3af', scale: false },
+  { id: 'editar',          label: 'Moldear (Ajustar tamaño)', bg: '#e0e7ff',     border: '2px dashed #6366f1',   br: '3px', text: '✥',  tc: '#6366f1', scale: false }
+];
+
+// ── State ─────────────────────────────────────────
+var gridData      = {};
+var activeTool    = 'utilizada';
+var isDrawing     = false;
+var selectedCoord = null;
+var northMeters   = 13.4;
+var southMeters   = 13.3;
+var eastMeters    = 9.0;
+var westMeters    = 9.0;
+var currentSalaId = null;
+var currentSalaNombre  = '';
+var currentSitioNombre = '';
+
+// ── Boot ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  buildSitioSelectMain();
+  buildToolsList();
+  updateGridSizeLabel();
+});
+
+// ── Step 1: Cascade Sitio → Sala ─────────────────
+function buildSitioSelectMain () {
+  var opts     = document.querySelectorAll('#salaSelectMain option[data-sitio-id]');
+  var sitioMap = {};
+  opts.forEach(function (o) {
+    var id = o.getAttribute('data-sitio-id');
+    var nm = o.getAttribute('data-sitio-nombre');
+    if (id && !sitioMap[id]) sitioMap[id] = nm;
+  });
+  var sel = document.getElementById('sitioSelectMain');
+  Object.entries(sitioMap)
+    .sort(function (a, b) { return a[1].localeCompare(b[1]); })
+    .forEach(function (entry) {
+      var opt = document.createElement('option');
+      opt.value = entry[0];
+      opt.textContent = entry[1];
+      sel.appendChild(opt);
+    });
+}
+
+function onSitioChangeMain () {
+  var sitioId = document.getElementById('sitioSelectMain').value;
+  var salaOpts = document.querySelectorAll('#salaSelectMain option[data-sitio-id]');
+  var first = true;
+  salaOpts.forEach(function (o) {
+    if (sitioId && o.getAttribute('data-sitio-id') !== sitioId) {
+      o.style.display = 'none';
+      o.disabled = true;
+    } else {
+      o.style.display = '';
+      o.disabled = false;
+    }
+  });
+  document.getElementById('salaSelectMain').value = '';
+}
+
+function crearLayout () {
+  var salaId = document.getElementById('salaSelectMain').value;
+  if (!salaId) { alert('Por favor seleccione una sala.'); return; }
+
+  var salaOpt = document.querySelector('#salaSelectMain option[value="' + salaId + '"]');
+  currentSalaNombre  = salaOpt ? salaOpt.getAttribute('data-sala-nombre') : 'Sala';
+  currentSitioNombre = salaOpt ? salaOpt.getAttribute('data-sitio-nombre') : '';
+  currentSalaId = salaId;
+
+  // Load persisted grid
+  try { gridData = JSON.parse(localStorage.getItem('layoutGrid_' + salaId) || '{}'); }
+  catch (e) { gridData = {}; }
+
+  // Update header labels
+  var lbl = document.getElementById('headerSalaLabel');
+  lbl.textContent = currentSitioNombre + ' › ' + currentSalaNombre;
+  lbl.style.display = 'inline-flex';
+  document.getElementById('btnGuardarImagen').style.display = 'inline-flex';
+  document.getElementById('btnLimpiarHeader').style.display = 'inline-flex';
+
+  // Update sidebar card
+  document.getElementById('sidebarSalaName').textContent  = currentSalaNombre;
+  document.getElementById('sidebarSitioName').textContent = currentSitioNombre;
+
+  // Switch panels
+  document.getElementById('selectorPanel').style.display = 'none';
+  document.getElementById('editorPanel').style.display   = 'flex';
+
+  selectedCoord = null;
+  updateMoldPanel();
+  renderGrid();
+}
+
+function volverSelector () {
+  document.getElementById('editorPanel').style.display   = 'none';
+  document.getElementById('selectorPanel').style.display = 'flex';
+  document.getElementById('headerSalaLabel').style.display  = 'none';
+  document.getElementById('btnGuardarImagen').style.display = 'none';
+  document.getElementById('btnLimpiarHeader').style.display = 'none';
+}
+
+// ── Dimensions ────────────────────────────────────
+function onDimChange () {
+  northMeters = Math.max(0.6, parseFloat(document.getElementById('northMeters').value) || 0.6);
+  southMeters = Math.max(0.6, parseFloat(document.getElementById('southMeters').value) || 0.6);
+  westMeters  = Math.max(0.6, parseFloat(document.getElementById('westMeters').value)  || 0.6);
+  eastMeters  = Math.max(0.6, parseFloat(document.getElementById('eastMeters').value)  || 0.6);
+  updateGridSizeLabel();
+  renderGrid();
+}
+
+function getCols () { return Math.ceil(Math.max(northMeters, southMeters) / TILE_SIZE); }
+function getRows () { return Math.ceil(Math.max(eastMeters,  westMeters)  / TILE_SIZE); }
+
+function updateGridSizeLabel () {
+  var el = document.getElementById('gridSizeLabel');
+  if (el) el.textContent = getCols() + ' × ' + getRows();
+}
+
+// ── Tools List ────────────────────────────────────
+function buildToolsList () {
+  var container = document.getElementById('toolsList');
+  if (!container) return;
+  container.innerHTML = '';
+  ITEM_TYPES.forEach(function (tool) {
+    var btn = document.createElement('button');
+    btn.id   = 'toolBtn_' + tool.id;
+    btn.type = 'button';
+    btn.onclick = function () { selectTool(tool.id); };
+    btn.style.cssText = 'display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:8px; border:2px solid transparent; cursor:pointer; background:transparent; width:100%; text-align:left;';
+
+    var swatch = document.createElement('div');
+    swatch.style.cssText = 'width:26px; height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; background:' + tool.bg + '; border:' + tool.border + '; border-radius:' + (tool.scale ? '50%' : tool.br) + '; color:' + tool.tc + '; ' + (tool.scale ? 'transform:scale(0.85);' : '');
+    swatch.textContent = tool.text;
+
+    var lbl = document.createElement('span');
+    lbl.style.cssText = 'font-size:12px; font-weight:500; color:#374151;';
+    lbl.textContent = tool.label;
+
+    btn.appendChild(swatch);
+    btn.appendChild(lbl);
+    container.appendChild(btn);
+  });
+  highlightActiveTool();
+}
+
+function selectTool (toolId) {
+  activeTool = toolId;
+  if (toolId !== 'editar') { selectedCoord = null; updateMoldPanel(); }
+  highlightActiveTool();
+}
+
+function highlightActiveTool () {
+  ITEM_TYPES.forEach(function (t) {
+    var btn = document.getElementById('toolBtn_' + t.id);
+    if (!btn) return;
+    btn.style.borderColor = t.id === activeTool ? '#3b82f6' : 'transparent';
+    btn.style.background  = t.id === activeTool ? '#eff6ff' : 'transparent';
+  });
+}
+
+// ── Column Letter ─────────────────────────────────
+function getColLetter (col) {
+  var s = '', i = col;
+  while (i >= 0) { s = String.fromCharCode((i % 26) + 65) + s; i = Math.floor(i / 26) - 1; }
+  return s;
+}
+
+// ── Grid Render ───────────────────────────────────
+function renderGrid () {
+  updateGridSizeLabel();
+  var wrapper = document.getElementById('gridWrapper');
+  if (!wrapper) return;
+
+  if (!currentSalaId) {
+    wrapper.innerHTML = '<div style="text-align:center; padding:48px; color:#9ca3af;">Seleccione una sala para comenzar.</div>';
+    return;
+  }
+
+  var cols = getCols(), rows = getRows();
+  var CELL = 48, HDR = 36;
+  var h = '';
+
+  h += '<div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:8px; user-select:none;">';
+
+  // North label
+  h += '<div style="display:flex; align-items:center; gap:12px;">'
+     + '<div style="color:#2563eb; font-weight:700; font-size:12px; background:#eff6ff; padding:4px 16px; border-radius:999px; border:1px solid #bfdbfe;">Ancho: ' + northMeters + 'm</div>'
+     + '<span style="color:#9ca3af; font-size:10px; font-weight:700; letter-spacing:.1em;">NORTE ↑</span>'
+     + '</div>';
+
+  // Middle
+  h += '<div style="display:flex; align-items:center; gap:10px;">';
+
+  // West label
+  h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">'
+     + '<span style="color:#9ca3af; font-size:9px; font-weight:700; writing-mode:vertical-rl; transform:rotate(180deg); letter-spacing:.08em;">← OESTE</span>'
+     + '<div style="writing-mode:vertical-rl; transform:rotate(180deg); color:#2563eb; font-weight:700; font-size:11px; background:#eff6ff; padding:8px 5px; border-radius:999px; border:1px solid #bfdbfe;">Largo: ' + westMeters + 'm</div>'
+     + '</div>';
+
+  // Grid
+  h += '<div id="theGrid" style="display:grid; grid-template-columns:' + HDR + 'px repeat(' + cols + ', ' + CELL + 'px); gap:1px; background:#e5e7eb; border:2px solid #9ca3af; cursor:crosshair;">';
+
+  // Corner
+  h += '<div style="width:' + HDR + 'px; height:30px; background:#f3f4f6; border-bottom:2px solid #d1d5db; border-right:2px solid #d1d5db;"></div>';
+
+  // Col headers
+  for (var c = 0; c < cols; c++) {
+    h += '<div style="height:30px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-weight:700; color:#374151; border-bottom:2px solid #d1d5db; font-size:11px;">' + getColLetter(c) + '</div>';
+  }
+
+  // Rows
+  for (var r = 0; r < rows; r++) {
+    h += '<div style="width:' + HDR + 'px; height:' + CELL + 'px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-weight:700; color:#374151; border-right:2px solid #d1d5db; font-size:11px;">' + (r + 1) + '</div>';
+    for (var cc = 0; cc < cols; cc++) {
+      var coord  = getColLetter(cc) + '-' + (r + 1);
+      var cd     = gridData[coord];
+      var isSel  = selectedCoord === coord;
+      var inner  = cd ? cellInnerHTML(cd, isSel) : '';
+      h += '<div data-coord="' + coord + '" style="width:' + CELL + 'px; height:' + CELL + 'px; background:#f9fafb; position:relative; box-shadow:inset 1px 1px 3px rgba(0,0,0,0.08);' + (isSel ? ' outline:2px solid #6366f1; outline-offset:-2px;' : '') + '">' + inner + '</div>';
+    }
+  }
+
+  h += '</div>'; // theGrid
+
+  // East label
+  h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">'
+     + '<span style="color:#9ca3af; font-size:9px; font-weight:700; writing-mode:vertical-rl; letter-spacing:.08em;">ESTE →</span>'
+     + '<div style="writing-mode:vertical-rl; color:#2563eb; font-weight:700; font-size:11px; background:#eff6ff; padding:8px 5px; border-radius:999px; border:1px solid #bfdbfe;">Largo: ' + eastMeters + 'm</div>'
+     + '</div>';
+
+  h += '</div>'; // middle row
+
+  // South label
+  h += '<div style="display:flex; align-items:center; gap:12px;">'
+     + '<span style="color:#9ca3af; font-size:10px; font-weight:700; letter-spacing:.1em;">SUR ↓</span>'
+     + '<div style="color:#2563eb; font-weight:700; font-size:12px; background:#eff6ff; padding:4px 16px; border-radius:999px; border:1px solid #bfdbfe;">Ancho: ' + southMeters + 'm</div>'
+     + '</div>';
+
+  h += '</div>'; // flex col
+  wrapper.innerHTML = h;
+
+  // Event delegation
+  var grid = document.getElementById('theGrid');
+  if (grid) {
+    grid.addEventListener('mousedown', onGridMouseDown);
+    grid.addEventListener('mouseover', onGridMouseOver);
+  }
+}
+
+function cellInnerHTML (cd, isSel) {
+  var tool = null;
+  for (var i = 0; i < ITEM_TYPES.length; i++) { if (ITEM_TYPES[i].id === cd.type) { tool = ITEM_TYPES[i]; break; } }
+  if (!tool) return '';
+  var top    = cd.norte !== undefined ? cd.norte : 5;
+  var bottom = cd.sur   !== undefined ? cd.sur   : 5;
+  var left   = cd.oeste !== undefined ? cd.oeste : 5;
+  var right  = cd.este  !== undefined ? cd.este  : 5;
+  return '<div style="position:absolute; top:' + top + '%; bottom:' + bottom + '%; left:' + left + '%; right:' + right + '%; background:' + tool.bg + '; border:' + tool.border + '; border-radius:' + (tool.scale ? '50%' : tool.br) + '; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; color:' + tool.tc + '; z-index:' + (isSel ? 50 : 10) + '; ' + (tool.scale ? 'transform:scale(0.75);' : '') + ' pointer-events:none;">' + tool.text + '</div>';
+}
+
+// ── Event Delegation ──────────────────────────────
+function onGridMouseDown (e) {
+  var cell = e.target.closest ? e.target.closest('[data-coord]') : null;
+  if (!cell) return;
+  e.preventDefault();
+  isDrawing = true;
+  handleTile(cell.getAttribute('data-coord'), true);
+}
+
+function onGridMouseOver (e) {
+  if (!isDrawing || activeTool === 'editar') return;
+  var cell = e.target.closest ? e.target.closest('[data-coord]') : null;
+  if (cell) handleTile(cell.getAttribute('data-coord'), false);
+}
+
+function onMouseUp () { isDrawing = false; }
+
+function handleTile (coord, isClick) {
+  if (activeTool === 'editar') {
+    if (isClick) {
+      var prev = selectedCoord;
+      selectedCoord = (gridData[coord] && selectedCoord !== coord) ? coord : null;
+      updateMoldPanel();
+      refreshCell(coord);
+      if (prev && prev !== coord) refreshCell(prev);
+    }
+    return;
+  }
+  if (activeTool === 'borrar') {
+    if (gridData[coord]) {
+      delete gridData[coord];
+      if (selectedCoord === coord) { selectedCoord = null; updateMoldPanel(); }
+      refreshCell(coord);
+      persist();
+    }
+  } else {
+    var existing = gridData[coord];
+    gridData[coord] = {
+      type:  activeTool,
+      norte: existing ? existing.norte : 5,
+      sur:   existing ? existing.sur   : 5,
+      oeste: existing ? existing.oeste : 5,
+      este:  existing ? existing.este  : 5
+    };
+    refreshCell(coord);
+    persist();
+  }
+}
+
+function refreshCell (coord) {
+  var cell = document.querySelector('[data-coord="' + coord + '"]');
+  if (!cell) return;
+  var cd    = gridData[coord];
+  var isSel = selectedCoord === coord;
+  cell.style.outline       = isSel ? '2px solid #6366f1' : '';
+  cell.style.outlineOffset = isSel ? '-2px' : '';
+  cell.innerHTML           = cd ? cellInnerHTML(cd, isSel) : '';
+}
+
+// ── Mold Panel ────────────────────────────────────
+function updateMoldPanel () {
+  var panel = document.getElementById('moldPanel');
+  if (!panel) return;
+  if (!selectedCoord || !gridData[selectedCoord] || activeTool !== 'editar') {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  var d     = gridData[selectedCoord];
+  var norte = d.norte !== undefined ? d.norte : 5;
+  var sur   = d.sur   !== undefined ? d.sur   : 5;
+  var oeste = d.oeste !== undefined ? d.oeste : 5;
+  var este  = d.este  !== undefined ? d.este  : 5;
+
+  document.getElementById('moldCoordLabel').textContent = selectedCoord;
+  document.getElementById('moldNorte').value = norte;
+  document.getElementById('moldSur').value   = sur;
+  document.getElementById('moldOeste').value = oeste;
+  document.getElementById('moldEste').value  = este;
+  document.getElementById('moldNorteVal').textContent = Math.round(norte * 0.6) + ' cm';
+  document.getElementById('moldSurVal').textContent   = Math.round(sur   * 0.6) + ' cm';
+  document.getElementById('moldOesteVal').textContent = Math.round(oeste * 0.6) + ' cm';
+  document.getElementById('moldEsteVal').textContent  = Math.round(este  * 0.6) + ' cm';
+}
+
+function onMoldChange (field, value) {
+  if (!selectedCoord || !gridData[selectedCoord]) return;
+  gridData[selectedCoord][field] = Number(value);
+  var keyMap = { norte: 'moldNorteVal', sur: 'moldSurVal', oeste: 'moldOesteVal', este: 'moldEsteVal' };
+  var el = document.getElementById(keyMap[field]);
+  if (el) el.textContent = Math.round(Number(value) * 0.6) + ' cm';
+  refreshCell(selectedCoord);
+  persist();
+}
+
+// ── localStorage ──────────────────────────────────
+function persist () {
+  if (!currentSalaId) return;
+  try { localStorage.setItem('layoutGrid_' + currentSalaId, JSON.stringify(gridData)); } catch (e) {}
+}
+
+// ── Clear ─────────────────────────────────────────
+function clearGrid () {
+  if (!currentSalaId) return;
+  if (!confirm('¿Limpiar todo el layout de "' + currentSalaNombre + '"?')) return;
+  gridData = {};
+  selectedCoord = null;
+  updateMoldPanel();
+  persist();
+  renderGrid();
+}
+
+// ── Guardar como Imagen ───────────────────────────
+function guardarComoImagen () {
+  var grid = document.getElementById('theGrid');
+  if (!grid) { alert('Primero dibuje un layout.'); return; }
+
+  var btn = document.getElementById('btnGuardarImagen');
+  btn.textContent = '⏳ Exportando...';
+  btn.disabled = true;
+
+  // Capture the white card that wraps the grid
+  var target = grid.closest('.inline-block') || grid;
+
+  html2canvas(target, {
+    backgroundColor: '#ffffff',
+    scale: 2,
+    useCORS: true,
+    logging: false
+  }).then(function (canvas) {
+    var link = document.createElement('a');
+    var fileName = 'layout-' + (currentSitioNombre || 'sitio').replace(/\s+/g, '-').toLowerCase()
+                 + '-' + (currentSalaNombre || 'sala').replace(/\s+/g, '-').toLowerCase()
+                 + '.png';
+    link.download = fileName;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.textContent = '📷 Guardar como Imagen';
+    btn.disabled = false;
+  }).catch(function (err) {
+    console.error(err);
+    alert('Error al exportar imagen. Intente nuevamente.');
+    btn.textContent = '📷 Guardar como Imagen';
+    btn.disabled = false;
+  });
+}
+</script>
+
+</body>
+</html>

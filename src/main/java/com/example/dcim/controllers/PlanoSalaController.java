@@ -46,6 +46,13 @@ public class PlanoSalaController {
         return "plano-sala";
     }
 
+    @GetMapping("/layout")
+    public String layout(Model model) {
+        model.addAttribute("sitios", sitioRepository.findByActivoTrueOrderByNombreAsc());
+        model.addAttribute("salas", salaRepository.findAll());
+        return "layout-sala";
+    }
+
     @PostMapping("/guardar")
     public String guardar(
             @RequestParam Long salaId,
