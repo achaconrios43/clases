@@ -110,7 +110,7 @@
       <div style="font-size:12px; font-weight:700; color:#4338ca; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
         ✥ Moldeando: <span id="moldCoordLabel" style="background:#c7d2fe; padding:1px 7px; border-radius:4px; font-size:12px;"></span>
       </div>
-      <div style="display:flex; flex-direction:column; gap:10px;">
+      <div id="moldBaseSection" style="display:flex; flex-direction:column; gap:10px;">
         <div>
           <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Norte (Arriba)</span><span id="moldNorteVal" style="color:#4338ca; font-weight:700;"></span></label>
           <input type="range" id="moldNorte" min="-150" max="95" step="5" value="5" oninput="onMoldChange('norte', this.value)" style="width:100%; accent-color:#6366f1;">
@@ -126,6 +126,27 @@
         <div>
           <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Este (Der)</span><span id="moldEsteVal" style="color:#4338ca; font-weight:700;"></span></label>
           <input type="range" id="moldEste" min="-150" max="95" step="5" value="5" oninput="onMoldChange('este', this.value)" style="width:100%; accent-color:#6366f1;">
+        </div>
+      </div>
+      <div id="moldOverlaySection" style="display:none; margin-top:10px; border-top:1px solid #c7d2fe; padding-top:10px;">
+        <div style="font-size:11px; font-weight:700; color:#7c3aed; margin-bottom:8px;">▣ Capa Infraestructura</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Norte</span><span id="moldOvlNVal" style="color:#7c3aed; font-weight:700;"></span></label>
+            <input type="range" id="moldOvlN" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlN', this.value)" style="width:100%; accent-color:#7c3aed;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Sur</span><span id="moldOvlSVal" style="color:#7c3aed; font-weight:700;"></span></label>
+            <input type="range" id="moldOvlS" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlS', this.value)" style="width:100%; accent-color:#7c3aed;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Oeste</span><span id="moldOvlOVal" style="color:#7c3aed; font-weight:700;"></span></label>
+            <input type="range" id="moldOvlO" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlO', this.value)" style="width:100%; accent-color:#7c3aed;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Este</span><span id="moldOvlEVal" style="color:#7c3aed; font-weight:700;"></span></label>
+            <input type="range" id="moldOvlE" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlE', this.value)" style="width:100%; accent-color:#7c3aed;">
+          </div>
         </div>
       </div>
       <p style="font-size:10px; color:#6366f1; margin-top:8px; line-height:1.5;">
@@ -182,9 +203,9 @@ const ITEM_TYPES = [
   { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
   { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
   { id: 'fms200',          label: 'Sistema FM200',            bg: '#6b0202',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
-  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '4px', text: 'E',  tc: '#fff',    scale: false },
   { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
-  { id: 'eeaa',            label: 'Sistema Climatización',     bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'FM', tc: '#fff',    scale: false },
+  { id: 'eeaa',            label: 'Sistema Climatización',     bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'EEAA', tc: '#fff',  scale: false },
   { id: 'borrar',          label: 'Goma de borrar (Quitar)',  bg: 'transparent', border: '2px dashed #d1d5db',   br: '3px', text: '✕',  tc: '#9ca3af', scale: false },
   { id: 'editar',          label: 'Moldear (Ajustar tamaño)', bg: '#e0e7ff',     border: '2px dashed #6366f1',   br: '3px', text: '✥',  tc: '#6366f1', scale: false }
 ];
@@ -567,7 +588,11 @@ function cellInnerHTML (cd, isSel) {
     var ovl = null;
     for (var j = 0; j < OVERLAY_TYPES.length; j++) { if (OVERLAY_TYPES[j].id === cd.overlay) { ovl = OVERLAY_TYPES[j]; break; } }
     if (ovl) {
-      result += '<div style="position:absolute;top:0;bottom:0;left:0;right:0;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + ovl.tc + ';z-index:20;pointer-events:none;">' + ovl.text + '</div>';
+      var ovlT = cd.ovlN !== undefined ? cd.ovlN : 0;
+      var ovlB = cd.ovlS !== undefined ? cd.ovlS : 0;
+      var ovlL = cd.ovlO !== undefined ? cd.ovlO : 0;
+      var ovlR = cd.ovlE !== undefined ? cd.ovlE : 0;
+      result += '<div style="position:absolute;top:' + ovlT + '%;bottom:' + ovlB + '%;left:' + ovlL + '%;right:' + ovlR + '%;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + ovl.tc + ';z-index:20;pointer-events:none;">' + ovl.text + '</div>';
     }
   }
   // Nombre del rack (desde inventario) — etiqueta pequeña en la celda
@@ -599,7 +624,7 @@ function handleTile (coord, isClick) {
   if (activeTool === 'editar') {
     if (isClick) {
       var prev = selectedCoord;
-      selectedCoord = (gridData[coord] && gridData[coord].type && selectedCoord !== coord) ? coord : null;
+      selectedCoord = (gridData[coord] && (gridData[coord].type || gridData[coord].overlay) && selectedCoord !== coord) ? coord : null;
       updateMoldPanel();
       refreshCell(coord);
       if (prev && prev !== coord) refreshCell(prev);
@@ -658,8 +683,11 @@ function updateMoldPanel () {
     panel.style.display = 'none';
     return;
   }
+  var d = gridData[selectedCoord];
   panel.style.display = 'block';
-  var d     = gridData[selectedCoord];
+  // Mostrar sliders base solo si hay elemento tipo (no solo overlay)
+  var baseSection = document.getElementById('moldBaseSection');
+  if (baseSection) baseSection.style.display = d.type ? 'flex' : 'none';
   var norte = d.norte !== undefined ? d.norte : 5;
   var sur   = d.sur   !== undefined ? d.sur   : 5;
   var oeste = d.oeste !== undefined ? d.oeste : 5;
@@ -674,12 +702,34 @@ function updateMoldPanel () {
   document.getElementById('moldSurVal').textContent   = Math.round(sur   * 0.6) + ' cm';
   document.getElementById('moldOesteVal').textContent = Math.round(oeste * 0.6) + ' cm';
   document.getElementById('moldEsteVal').textContent  = Math.round(este  * 0.6) + ' cm';
+
+  // Sección overlay
+  var ovlSection = document.getElementById('moldOverlaySection');
+  var baseSliders = document.getElementById('moldBaseSection');
+  if (d.overlay) {
+    ovlSection.style.display = 'block';
+    var ovlN = d.ovlN !== undefined ? d.ovlN : 0;
+    var ovlS = d.ovlS !== undefined ? d.ovlS : 0;
+    var ovlO = d.ovlO !== undefined ? d.ovlO : 0;
+    var ovlE = d.ovlE !== undefined ? d.ovlE : 0;
+    document.getElementById('moldOvlN').value = ovlN;
+    document.getElementById('moldOvlS').value = ovlS;
+    document.getElementById('moldOvlO').value = ovlO;
+    document.getElementById('moldOvlE').value = ovlE;
+    document.getElementById('moldOvlNVal').textContent = Math.round(ovlN * 0.6) + ' cm';
+    document.getElementById('moldOvlSVal').textContent = Math.round(ovlS * 0.6) + ' cm';
+    document.getElementById('moldOvlOVal').textContent = Math.round(ovlO * 0.6) + ' cm';
+    document.getElementById('moldOvlEVal').textContent = Math.round(ovlE * 0.6) + ' cm';
+  } else {
+    ovlSection.style.display = 'none';
+  }
 }
 
 function onMoldChange (field, value) {
   if (!selectedCoord || !gridData[selectedCoord]) return;
   gridData[selectedCoord][field] = Number(value);
-  var keyMap = { norte:'moldNorteVal', sur:'moldSurVal', oeste:'moldOesteVal', este:'moldEsteVal' };
+  var keyMap = { norte:'moldNorteVal', sur:'moldSurVal', oeste:'moldOesteVal', este:'moldEsteVal',
+                 ovlN:'moldOvlNVal', ovlS:'moldOvlSVal', ovlO:'moldOvlOVal', ovlE:'moldOvlEVal' };
   var el = document.getElementById(keyMap[field]);
   if (el) el.textContent = Math.round(Number(value) * 0.6) + ' cm';
   refreshCell(selectedCoord);
