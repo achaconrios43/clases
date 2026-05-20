@@ -1,6 +1,7 @@
 package com.example.dcim.controllers;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.dcim.dao.InventarioRepository;
 import com.example.dcim.dao.PlanoSalaElementoRepository;
 import com.example.dcim.dao.PlanoSalaRepository;
 import com.example.dcim.dao.SalaRepository;
 import com.example.dcim.dao.SitioRepository;
+import com.example.dcim.entity.Inventario;
 import com.example.dcim.entity.PlanoSala;
 import com.example.dcim.entity.PlanoSalaElemento;
 import com.example.dcim.entity.Sala;
@@ -40,6 +43,9 @@ public class PlanoSalaController {
 
     @Autowired
     private SitioRepository sitioRepository;
+
+    @Autowired
+    private InventarioRepository inventarioRepository;
 
     @GetMapping
     public String listar(Model model) {
@@ -67,6 +73,79 @@ public class PlanoSalaController {
                 "rows", p.getCantidadFilas()
         )))
                 .orElse(ResponseEntity.ok(Map.<String, Object>of("gridJson", "{}", "cols", 0, "rows", 0)));
+    }
+
+    /**
+     * GET /plano-sala/api/racks-inventario/{salaId}
+     * Devuelve los racks del inventario que tienen coordenadas asignadas para la sala dada.
+     * Usado por el editor y visor de planos para mostrar posiciones de racks.
+     */
+    @GetMapping("/api/racks-inventario/{salaId}")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getRacksInventario(@PathVariable Long salaId) {
+        List<Inventario> items = inventarioRepository.findBySalaRefIdConCoordenadas(salaId);
+
+        // Agrupar por coordenada+nombreRack (una entrada por posición de rack)
+        Map<String, List<Inventario>> byCoord = new LinkedHashMap<>();
+        for (Inventario i : items) {
+            String coord = i.getCoordenadas() == null ? "" : i.getCoordenadas().trim().toUpperCase();
+            if (coord.isEmpty()) continue;
+            byCoord.computeIfAbsent(coord, k -> new ArrayList<>()).add(i);
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<String, List<Inventario>> entry : byCoord.entrySet()) {
+            String coord = entry.getKey();
+            List<Inventario> inv = entry.getValue();
+
+            // Nombre del rack: primero no nulo / no vacío / no "N/A"
+            String rackName = coord;
+            for (Inventario i : inv) {
+                String n = i.getNombreRack();
+                if (n != null && !n.isBlank() && !"N/A".equalsIgnoreCase(n)) {
+                    rackName = n;
+                    break;
+                }
+            }
+
+            // Convertir coord "A3" → gridKey "A-3"
+            String gridKey = parseCoordToGridKey(coord);
+
+            List<Map<String, Object>> equipos = new ArrayList<>();
+            for (Inventario i : inv) {
+                Map<String, Object> e = new LinkedHashMap<>();
+                e.put("tipo",   i.getTipo()   != null ? i.getTipo()   : "");
+                e.put("marca",  i.getMarca()  != null ? i.getMarca()  : "");
+                e.put("modelo", i.getModelo() != null ? i.getModelo() : "");
+                e.put("tag",    i.getTag()    != null ? i.getTag()    : "");
+                e.put("estado", i.getEstado() != null ? i.getEstado() : "");
+                equipos.add(e);
+            }
+
+            Map<String, Object> rack = new LinkedHashMap<>();
+            rack.put("coordenadas",   coord);
+            rack.put("gridKey",       gridKey);
+            rack.put("nombreRack",    rackName);
+            rack.put("totalEquipos",  equipos.size());
+            rack.put("equipos",       equipos);
+            result.add(rack);
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    /** Convierte coordenada de inventario ("A3", "AB12") a clave de grilla ("A-3", "AB-12"). */
+    private String parseCoordToGridKey(String coord) {
+        StringBuilder letters = new StringBuilder();
+        StringBuilder numbers = new StringBuilder();
+        for (char c : coord.toCharArray()) {
+            if (Character.isLetter(c)) letters.append(c);
+            else if (Character.isDigit(c)) numbers.append(c);
+        }
+        if (letters.length() > 0 && numbers.length() > 0) {
+            return letters.toString() + "-" + numbers.toString();
+        }
+        return coord;
     }
 
     /**

@@ -116,6 +116,17 @@
     </div>
   </div>
 
+  <!-- Panel de inventario del rack (aparece al hacer clic en celda) -->
+  <div id="rackInfoPanel" class="no-print" style="display:none; margin-top:14px; background:#fff; border-radius:12px; border:2px solid #0b3c75; padding:16px 22px; box-shadow:0 4px 16px rgba(11,60,117,0.12);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <div style="font-size:12px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em;">🗄️ Inventario del rack</div>
+      <button onclick="document.getElementById('rackInfoPanel').style.display='none';"
+              style="padding:4px 12px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:7px; font-size:12px; font-weight:600; color:#64748b; cursor:pointer;">✕ Cerrar</button>
+    </div>
+    <div id="rackInfoHeader" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;"></div>
+    <div id="rackInfoTable" style="overflow-x:auto;"></div>
+  </div>
+
 </div>
 
 <footer th:replace="~{fragments/footer :: footer}" class="no-print"></footer>
@@ -126,6 +137,7 @@
 var PLANO_COLS   = /*[[${plano.cantidadColumnas}]]*/ 0;
 var PLANO_ROWS   = /*[[${plano.cantidadFilas}]]*/ 0;
 var LAYOUT_JSON  = /*[[${plano.layoutJson != null ? plano.layoutJson : '{}'}]]*/ '{}';
+var SALA_ID      = /*[[${plano.sala.id}]]*/ 0;
 /*]]>*/
 </script>
 
@@ -296,6 +308,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   renderSheetGrid(allSheetsVer[1] || {});
 
+  // ── Racks del inventario (para popup al hacer clic) ─────────────
+  var racksByGridKey = {};
+
+  if (SALA_ID) {
+    fetch('/plano-sala/api/racks-inventario/' + SALA_ID)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        (data || []).forEach(function (rack) {
+          if (rack.gridKey) racksByGridKey[rack.gridKey] = rack;
+        });
+      })
+      .catch(function () {});
+  }
+
   // ── Distance measurement ────────────────────────────────
   var measureMode  = false;
   var measureCell1 = null;
@@ -312,27 +338,34 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   document.getElementById('canvasWrapper').addEventListener('click', function (e) {
-    if (!measureMode) return;
     var cell = e.target.closest('[data-coord]');
     if (!cell) return;
     var coord = cell.getAttribute('data-coord');
-    if (!measureCell1) {
-      document.querySelectorAll('#canvasWrapper [data-coord]').forEach(function (el) { el.style.outline = ''; });
-      measureCell1 = coord;
-      cell.style.outline = '3px solid #f59e0b';
-      cell.style.outlineOffset = '-2px';
-      document.getElementById('measureBtn').textContent = '📏 Clic en 2ª posición…';
-    } else {
-      cell.style.outline = '3px solid #10b981';
-      cell.style.outlineOffset = '-2px';
-      showMeasureResult(measureCell1, coord);
-      measureCell1 = null;
-      measureMode  = false;
-      var btn = document.getElementById('measureBtn');
-      btn.style.background  = 'rgba(255,255,255,0.18)';
-      btn.textContent       = '📏 Medir distancia';
-      document.getElementById('canvasWrapper').style.cursor = '';
+
+    if (measureMode) {
+      if (!measureCell1) {
+        document.querySelectorAll('#canvasWrapper [data-coord]').forEach(function (el) { el.style.outline = ''; });
+        measureCell1 = coord;
+        cell.style.outline = '3px solid #f59e0b';
+        cell.style.outlineOffset = '-2px';
+        document.getElementById('measureBtn').textContent = '📏 Clic en 2ª posición…';
+      } else {
+        cell.style.outline = '3px solid #10b981';
+        cell.style.outlineOffset = '-2px';
+        showMeasureResult(measureCell1, coord);
+        measureCell1 = null;
+        measureMode  = false;
+        var btn = document.getElementById('measureBtn');
+        btn.style.background  = 'rgba(255,255,255,0.18)';
+        btn.textContent       = '📏 Medir distancia';
+        document.getElementById('canvasWrapper').style.cursor = '';
+      }
+      return;
     }
+
+    // Modo normal: mostrar inventario del rack si existe
+    var rack = racksByGridKey[coord];
+    if (rack) { showRackInfo(rack, coord); }
   });
 
   function showMeasureResult(c1, c2) {
@@ -356,6 +389,51 @@ document.addEventListener('DOMContentLoaded', function () {
     var res = document.getElementById('measureResult');
     res.style.display = 'block';
     res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function showRackInfo(rack, coord) {
+    var header = document.getElementById('rackInfoHeader');
+    var table  = document.getElementById('rackInfoTable');
+    var panel  = document.getElementById('rackInfoPanel');
+
+    header.innerHTML =
+      '<div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:8px 14px;">'
+      + '<div style="font-size:10px; font-weight:700; color:#1e40af; text-transform:uppercase;">Coordenada</div>'
+      + '<div style="font-size:18px; font-weight:800; color:#1d4ed8; font-family:monospace;">' + rack.coordenadas + '</div>'
+      + '</div>'
+      + '<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 14px;">'
+      + '<div style="font-size:10px; font-weight:700; color:#166534; text-transform:uppercase;">Rack</div>'
+      + '<div style="font-size:15px; font-weight:700; color:#15803d;">' + rack.nombreRack + '</div>'
+      + '</div>'
+      + '<div style="background:#fefce8; border:1px solid #fde68a; border-radius:8px; padding:8px 14px;">'
+      + '<div style="font-size:10px; font-weight:700; color:#92400e; text-transform:uppercase;">Equipos</div>'
+      + '<div style="font-size:18px; font-weight:800; color:#b45309;">' + rack.totalEquipos + '</div>'
+      + '</div>';
+
+    if (rack.equipos && rack.equipos.length > 0) {
+      var rows = rack.equipos.map(function (e) {
+        return '<tr style="border-bottom:1px solid #f1f5f9;">'
+          + '<td style="padding:6px 10px; font-size:12px; color:#374151;">' + (e.tipo  || '—') + '</td>'
+          + '<td style="padding:6px 10px; font-size:12px; color:#374151;">' + (e.marca || '—') + '</td>'
+          + '<td style="padding:6px 10px; font-size:12px; color:#374151;">' + (e.modelo|| '—') + '</td>'
+          + '<td style="padding:6px 10px; font-size:12px; font-family:monospace; color:#0b3c75;">' + (e.tag || '—') + '</td>'
+          + '<td style="padding:6px 10px;"><span style="background:' + (e.estado==='Activo'?'#dcfce7':'#f1f5f9') + '; color:' + (e.estado==='Activo'?'#166534':'#374151') + '; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600;">' + (e.estado||'—') + '</span></td>'
+          + '</tr>';
+      }).join('');
+      table.innerHTML = '<table style="width:100%; border-collapse:collapse;">'
+        + '<thead><tr style="background:#f8fafc;">'
+        + '<th style="padding:7px 10px; font-size:11px; font-weight:700; color:#6b7280; text-align:left; text-transform:uppercase;">Tipo</th>'
+        + '<th style="padding:7px 10px; font-size:11px; font-weight:700; color:#6b7280; text-align:left; text-transform:uppercase;">Marca</th>'
+        + '<th style="padding:7px 10px; font-size:11px; font-weight:700; color:#6b7280; text-align:left; text-transform:uppercase;">Modelo</th>'
+        + '<th style="padding:7px 10px; font-size:11px; font-weight:700; color:#6b7280; text-align:left; text-transform:uppercase;">Tag</th>'
+        + '<th style="padding:7px 10px; font-size:11px; font-weight:700; color:#6b7280; text-align:left; text-transform:uppercase;">Estado</th>'
+        + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    } else {
+      table.innerHTML = '<div style="color:#9ca3af; font-size:13px; padding:10px 0;">Sin equipos registrados para este rack.</div>';
+    }
+
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 });
 </script>

@@ -57,4 +57,8 @@ public interface InventarioRepository extends JpaRepository<Inventario, Long> {
 
     @Query("SELECT i FROM Inventario i WHERE (:sitio IS NULL OR :sitio = '' OR i.sitio = :sitio) AND (:sala IS NULL OR :sala = '' OR i.sala = :sala) AND (:rack IS NULL OR :rack = '' OR i.nombreRack = :rack) ORDER BY i.nombreRack, i.ubicacionUr")
     List<Inventario> findByFiltroLayout(@Param("sitio") String sitio, @Param("sala") String sala, @Param("rack") String rack);
+
+    // Racks con coordenadas para un sala por su ID de referencia (para plano-sala editor/visor)
+    @Query("SELECT i FROM Inventario i WHERE i.salaRef.id = :salaId AND i.coordenadas IS NOT NULL AND i.coordenadas <> '' ORDER BY i.coordenadas, i.nombreRack")
+    List<Inventario> findBySalaRefIdConCoordenadas(@Param("salaId") Long salaId);
 }
