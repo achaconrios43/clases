@@ -86,4 +86,7 @@ public interface IIngresoAPDao extends JpaRepository<IngresoAP, Long> {
 
     @Query("SELECT COUNT(i) FROM IngresoAP i WHERE i.sitioRef.id = :sitioId AND i.fechaInicio = :fecha")
     Long countBySitioRefIdAndFechaInicio(@Param("sitioId") Long sitioId, @Param("fecha") LocalDate fecha);
+
+    @Query("SELECT DISTINCT i.sitioIngreso FROM IngresoAP i WHERE i.sitioIngreso IS NOT NULL ORDER BY i.sitioIngreso")
+    List<String> findDistinctSitioIngreso();
 }
