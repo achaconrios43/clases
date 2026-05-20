@@ -27,14 +27,14 @@ public class Inventario {
     @Column(length = 100)
     private String sala;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sala_id")
     private Sala salaRef;
 
     @Column(length = 100)
     private String sitio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sitio_id")
     private Sitio sitioRef;
 

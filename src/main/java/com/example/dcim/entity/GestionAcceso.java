@@ -97,16 +97,16 @@ public class GestionAcceso {
     @Column(name = "sitio")
     private String sitio; // DC San Martin, DC Apoquindo, MC La Florida, etc.
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sitio_id")
     private Sitio sitioRef;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sala_id")
     private Sala salaRef;
 
     /** FK al usuario del sistema que crea/registra la gestión */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_registra_id")
     private Usuario usuarioRegistra;
 

@@ -10,6 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -93,9 +94,10 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
                 )
 
-            // HttpSessionCsrfTokenRepository: repositorio por defecto, compatible 100% con Thymeleaf.
+            // CsrfTokenRequestAttributeHandler: expone _csrf como atributo no-lazy en Thymeleaf (Spring Security 6).
             .csrf(csrf -> csrf
                 .csrfTokenRepository(new HttpSessionCsrfTokenRepository())
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
             )
 
             // Configuración del formulario de login
@@ -110,9 +112,11 @@ public class SecurityConfig {
                 .permitAll()
             )
 
-            // Configuración de sesión para aplicación web
+            // ALWAYS: crea la sesión ANTES de renderizar la vista,
+            // evitando IllegalStateException al guardar el CSRF token cuando
+            // el buffer HTTP ya está comprometido (respuesta grande en Render/proxy).
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
             )
 
             // Configuración del logout

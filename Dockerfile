@@ -33,7 +33,7 @@ USER spring:spring
 
 EXPOSE 8082
 
-ENV JAVA_OPTS="-Xmx450m -Xms256m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0" \
+ENV JAVA_OPTS="-Xmx450m -Xms256m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8" \
     SPRING_PROFILES_ACTIVE=production \
     PORT=8082
 

@@ -141,7 +141,7 @@ public class IngresoAP {
     @Column(name = "sitio_ingreso", length = 100)
     private String sitioIngreso;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sitio_id")
     private Sitio sitioRef;
 
@@ -149,7 +149,7 @@ public class IngresoAP {
     @Column(name = "sala_ingresa", nullable = false, columnDefinition = "TEXT")
     private String salaIngresa;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sala_id")
     private Sala salaRef;
 
@@ -179,12 +179,12 @@ public class IngresoAP {
     private String coordenadasGps;
 
     /** FK al usuario del sistema que registra el ingreso (puede ser null para externos) */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_registra_id")
     private Usuario usuarioRegistra;
 
     /** FK al usuario del sistema que aprueba el ingreso (puede ser null para externos) */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "aprobador_id")
     private Usuario aprobadorRef;
 

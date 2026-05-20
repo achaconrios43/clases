@@ -23,7 +23,7 @@ public class MedicionTemperatura {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "punto_id", nullable = false)
     private PuntoMedicion punto;
 

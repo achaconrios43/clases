@@ -10,8 +10,6 @@
   min-height:100vh;
 ">
 
-<nav th:replace="~{fragments/navdar :: nav}"></nav>
-
 <main class="flex-1 flex items-center justify-center py-12 px-4">
   <div style="
     background: rgba(255,255,255,0.97);
@@ -46,7 +44,6 @@
     </div>
 
     <form id="loginForm" th:action="@{/login}" method="post" class="space-y-4">
-      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
       <!-- Email -->
       <div>

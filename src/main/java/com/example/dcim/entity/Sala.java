@@ -23,7 +23,7 @@ public class Sala {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sitio_id", nullable = false)
     private Sitio sitio;
 

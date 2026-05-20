@@ -24,7 +24,7 @@ public class PuntoMedicion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
 

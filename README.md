@@ -1,212 +1,210 @@
-﻿# DCIM - Sistema de Gestión de Ingresos
+﻿# DCIM — Sistema de Gestión de Data Centers
 
-Sistema web desarrollado en Spring Boot para gestionar usuarios e ingresos en instalaciones de Data Centers y Mega Centrales.
+Sistema web desarrollado en Spring Boot para gestionar usuarios, ingresos, inventario de equipos, temperaturas y planos de sala en instalaciones de Data Centers y Mega Centrales Telefónica.
+
+**Producción:** https://dcim-app.onrender.com  
+**Docker Hub:** `achaconrios43ipss/dcim-app:latest`  
+**GitHub:** https://github.com/achaconrios43/dcim  
+**Desarrollado por:** Arturo Chacón
+
+---
 
 ## Tecnologías
 
 | Capa | Tecnología |
 |------|-----------|
-| Runtime | Java 25 LTS |
+| Runtime | Java 25 LTS (Eclipse Adoptium Temurin) |
 | Framework | Spring Boot 3.5.9 |
 | ORM | Spring Data JPA / Hibernate |
-| Seguridad | Spring Security |
+| Seguridad | Spring Security + BCrypt + CSRF |
 | Vistas | Thymeleaf |
 | Frontend | TailwindCSS, HTML5, JavaScript |
-| Base de datos | MySQL 8.4 |
-| Build | Maven Wrapper |
+| Base de datos local | MySQL 8.4 (`localhost:3307/dcimdb`) |
+| Base de datos producción | PostgreSQL 16 (Render) |
+| Contenedor | Docker multi-stage (Red Hat UBI 9 + OpenJDK 25) |
+| Hosting | Render (Web Service + PostgreSQL) |
+| Build | Maven Wrapper (`mvnw.cmd`) |
 
-## Stack y herramientas usadas
+---
 
-- Lenguaje principal: Java 25
-- Framework backend: Spring Boot 3.5.9
-- Plantillas UI: Thymeleaf + HTML + JavaScript + TailwindCSS
-- Persistencia: Spring Data JPA con Hibernate
-- Seguridad: Spring Security + BCrypt + CSRF para web
-- IDE/Extensión: VS Code con Java (Red Hat Language Support)
-- Contenedores: Docker multi-stage
-- Runtime de contenedor: Red Hat UBI 9 con OpenJDK 25
-- Despliegue cloud (opcional): Koyeb
+## Ejecución local
 
-## Requisitos previos
-
-- Java 25 LTS
+### Requisitos
+- Java 25 LTS instalado en `C:\Program Files\Eclipse Adoptium\jdk-25.0.0.36-hotspot`
 - MySQL 8.4 corriendo en `localhost:3307`
 - Base de datos `dcimdb` creada
-
-### Crear base de datos
 
 ```sql
 CREATE DATABASE dcimdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-## Ejecución local
+### Comandos
 
 ```powershell
+# Perfil web (navegador, MySQL local, puerto 8082)
+$env:JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-25.0.0.36-hotspot"
+$env:SPRING_PROFILES_ACTIVE="web"
 .\mvnw.cmd spring-boot:run
-```
 
-La aplicación inicia en: `http://localhost:8081`
-
-### Perfiles disponibles
-
-| Perfil | Comando | Uso |
-|--------|---------|-----|
-| default | `.\mvnw.cmd spring-boot:run` | Desarrollo local |
-| web | `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=web"` | Browser optimizado |
-| mobile | `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=mobile"` | API móvil |
-| production | `.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=production"` | Producción |
-
-## Estructura del proyecto
-
-```
-src/main/java/com/example/dcim/
-├── DcimApplication.java          # Clase principal
-├── api/                          # Controladores REST
-│   ├── AuthApiController.java
-│   ├── GestionApiController.java
-│   ├── IngresoApiController.java
-│   └── UsuarioApiController.java
-├── config/                       # Configuración
-│   ├── CorsConfig.java
-│   ├── SecurityConfig.java
-│   └── WebConfig.java
-├── controllers/                  # Controladores web (Thymeleaf)
-│   ├── ClienteDashboardController.java
-│   ├── DashboardClienteDiarioController.java
-│   ├── DashboardClienteMensualController.java
-│   ├── DatabaseViewerController.java
-│   ├── GestionAccesoController.java
-│   ├── IngresoController.java
-│   ├── MainController.java
-│   └── UsuarioController.java
-├── dao/                          # Repositorios JPA
-├── entity/                       # Entidades JPA
-│   ├── GestionAcceso.java
-│   ├── IngresoAP.java
-│   └── Usuario.java
-└── service/                      # Lógica de negocio
-```
-
-## Endpoints principales
-
-### Web
-
-| Método | URL | Descripción |
-|--------|-----|-------------|
-| GET | `/` | Página de inicio / Login |
-| GET/POST | `/login` | Autenticación |
-| GET/POST | `/ingresoap` | Registro de ingreso |
-| GET | `/user/list` | Lista de usuarios |
-| GET/POST | `/user/create` | Crear usuario |
-| GET/POST | `/user/update` | Editar usuario |
-| GET/POST | `/user/delete` | Eliminar usuario |
-| GET | `/dashboard` | Panel principal |
-| GET | `/database-viewer` | Visor de base de datos (requiere login) |
-
-### API REST
-
-| Método | URL | Descripción |
-|--------|-----|-------------|
-| POST | `/api/auth/login` | Login API |
-| GET | `/api/usuarios` | Lista usuarios |
-| GET | `/api/ingresos` | Lista ingresos |
-| GET | `/api/gestion` | Lista gestión de accesos |
-
-## Configuración de base de datos
-
-Archivo: `src/main/resources/application.properties`
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3307/dcimdb
-spring.datasource.username=root
-spring.datasource.password=
-```
-
-Variables de entorno para producción:
-- `SPRING_DATASOURCE_URL`
-- `SPRING_DATASOURCE_USERNAME`
-- `SPRING_DATASOURCE_PASSWORD`
-
-## Seguridad implementada
-
-- Autenticación web por formulario (`/login`) con sesión
-- Password hashing con BCrypt
-- CSRF habilitado en rutas web
-- API REST en `/api/**` stateless y sin CSRF
-- Health endpoint de Actuator permitido para monitoreo
-
-Referencia: `src/main/java/com/example/dcim/config/SecurityConfig.java`
-
-## MySQL local y Workbench
-
-Conexión local actual:
-
-- Hostname: `127.0.0.1`
-- Puerto: `3307`
-- Usuario: `root`
-- Password: vacío
-- Schema: `dcimdb`
-
-En MySQL Workbench:
-
-1. Crear nueva conexión con esos parámetros.
-2. Abrir schema `dcimdb`.
-3. Revisar la vista unificada: `vw_usuario_modulo_relaciones`.
-4. Revisar tablas relacionales nuevas:
-	- `tipo_usuario`
-	- `usuario_tipo_usuario`
-	- `usuario_ingresoap_rel`
-	- `usuario_gestion_rel`
-	- `usuario_inventario_rel`
-
-## Unión de tablas por tipo de usuario
-
-Se implementó un modelo relacional para unir los módulos con usuario y tipo de usuario:
-
-- `usuario` conserva datos de identidad y rol operativo
-- `tipo_usuario` define catálogo de tipos (ADMIN, USER)
-- `usuario_tipo_usuario` asigna tipo a cada usuario
-- `usuario_ingresoap_rel` une usuarios con `ingresoap`
-- `usuario_gestion_rel` une usuarios con `gestion_acceso`
-- `usuario_inventario_rel` une usuarios con `inventario`
-- `vw_usuario_modulo_relaciones` entrega una vista unificada para consulta
-
-Herramientas para mantenimiento/normalización:
-
-- `com.example.dcim.tools.DatabaseMaintenanceTool`
-- `com.example.dcim.tools.DatabaseExportTool`
-
-## Ubicaciones soportadas
-
-- DC APOQUINDO
-- DC SAN MARTIN
-- MC LA FLORIDA
-- MC INDEPENDENCIA
-- MC CHILOÉ
-- MC PROVIDENCIA
-- MC PEDRO DE VALDIVIA
-- MC MANUEL MONTT
-
-## Build y tests
-
-```powershell
-# Compilar
+# Compilar sin ejecutar
 .\mvnw.cmd compile
-
-# Ejecutar tests
-.\mvnw.cmd test
 
 # Generar JAR
 .\mvnw.cmd package -DskipTests
 ```
 
+La aplicación inicia en: `http://localhost:8082`
+
+### Perfiles disponibles
+
+| Perfil | Puerto | Base de datos | Uso |
+|--------|--------|--------------|-----|
+| `default` | 8082 | MySQL local | Desarrollo general |
+| `web` | 8082 | MySQL local | Navegador optimizado, CSRF activo |
+| `mobile` | 8082 | MySQL local | API móvil, CORS activo |
+| `production` | 8082 | PostgreSQL (Render) | Producción en cloud |
+
+---
+
+## Módulos del sistema
+
+| Módulo | URL | Descripción |
+|--------|-----|-------------|
+| Login | `/login` | Autenticación por email o RUT |
+| Dashboard | `/dashboard` | Panel principal con resumen |
+| Usuarios | `/user/list` | CRUD de usuarios del sistema |
+| Ingreso AP | `/ingresoap` | Registro de ingresos a data centers |
+| Inventario | `/inventario` | Gestión de equipos por rack |
+| Layout racks | `/inventario/layout-vertical` | Vista visual de racks |
+| Gestión accesos | `/gestion` | Control de accesos físicos |
+| Temperaturas | `/temperaturas` | Configuración de puntos de medición |
+| Registro temp. | `/temperaturas/registro` | Registro diario AM/PM de temperaturas |
+| Plano sala | `/plano-sala` | Editor visual de planta de sala |
+| Plano plantillas | `/plano-sala/plantillas` | Gestión de plantillas de plano |
+| Salas | `/salas` | CRUD de salas de data center |
+| Dashboard cliente | `/dashboard-cliente` | Vista de cliente con métricas |
+
+---
+
+## Estructura de Base de Datos
+
+### Tablas principales
+
+| Tabla | Descripción |
+|-------|-------------|
+| `usuario` | Usuarios del sistema (email, rut, rol) |
+| `sitio` | Sitios/Data Centers (DC Apoquindo, DC San Martín, etc.) |
+| `sala` | Salas dentro de cada sitio |
+| `ingreso_ap` | Registros de ingreso a instalaciones |
+| `inventario` | Equipos por rack |
+| `gestion_acceso` | Control de accesos físicos |
+| `punto_medicion` | Puntos de temperatura configurados por sala |
+| `medicion_temperatura` | Mediciones diarias AM/PM por punto |
+| `plano_sala` | Planos guardados de sala |
+| `plano_sala_elemento` | Elementos individuales del plano |
+
+### Sitios configurados (Producción)
+
+| ID | Nombre |
+|----|--------|
+| 2 | DC San Martín |
+| 3 | DC Apoquindo |
+
+---
+
+## Seguridad
+
+- Autenticación web por formulario (`/login`) con sesión HTTP
+- Soporta login por **email** o **RUT** (ej: `15.441.473-8`)
+- Password hashing con **BCrypt**
+- **CSRF** habilitado en todas las rutas web
+- API REST en `/api/**` stateless, sin CSRF
+- Roles: `ADMIN`, `USER`, `SUPERVISOR`
+- Todas las rutas protegidas excepto `/`, `/login`, `/api/**`
+
+---
+
 ## Docker
 
 ```bash
-docker build -t dcim .
-docker run -p 8081:8081 dcim
+# Build imagen (sin caché para asegurar cambios)
+docker build --no-cache -t achaconrios43ipss/dcim-app:latest .
+
+# Push a Docker Hub
+docker push achaconrios43ipss/dcim-app:latest
+
+# Disparar re-deploy en Render (PowerShell)
+Invoke-RestMethod -Uri "https://api.render.com/deploy/srv-d830j9n2gups73c6oui0?key=7KY9rK14JGA" -Method POST
 ```
 
 ---
 
-**Versión:** 1.0.0 | **Java:** 21 LTS | **Spring Boot:** 3.5.9
+## Credenciales de prueba (Producción)
+
+| Campo | Valor |
+|-------|-------|
+| Email | `achaconrios@gmail.com` |
+| RUT | `15.441.473-8` |
+| Contraseña | `dcim2026` |
+| Rol | `ADMIN` |
+
+---
+
+## Historial de Cambios
+
+### 2026-05-19 — Fix LazyLoading, Plano Sala, Dashboard
+- **Fix crítico:** `FetchType.LAZY → FetchType.EAGER` en 8 entidades JPA (Sala, GestionAcceso, IngresoAP, Inventario, MedicionTemperatura, PlanoSala, PlanoSalaElemento, PuntoMedicion). Resolvía `LazyInitializationException` en producción con `spring.jpa.open-in-view=false`.
+- **Mejora:** `plano-sala.html` actualizado
+- **Mejora:** `dashboard-cliente-diario.html` actualizado
+- Docker `achaconrios43ipss/dcim-app:latest` reconstruido y desplegado en Render
+
+### 2026-05-18 — Módulo Temperaturas, Fix Encoding, Migración a Render
+- **Fix:** Codificación UTF-8 en producción (caracteres españoles y emojis garbled). Flags `-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8` en Dockerfile.
+- **Fix:** Login form no renderizaba en Render
+- **Fix:** `temperaturas.html` — segunda página duplicada eliminada
+- **Feat:** Vista por racks en inventario con hover tooltip
+- **Feat:** Datos semilla para `punto_medicion` (r4, j6 para sala CPD)
+- **Deploy:** Migración de Koyeb a **Render** con PostgreSQL
+
+### 2026-05-14 — Dockerfile Java 25, Docker Hub, Layout Racks
+- **Fix:** Dockerfile actualizado a Java 25, removido `hibernate.dialect` deprecado
+- **Fix:** Usuario Docker Hub corregido a `achaconrios43ipss`
+- **Feat:** Layout vertical de racks con tabla inventario completa
+- **Fix:** CSRF cookie repository + soporte completo Java 25
+
+### 2026-05-13 — Upgrade Java 25 + Maven Wrapper
+- **Upgrade:** Java 21 → Java 25 LTS
+- **Upgrade:** Maven Wrapper actualizado
+- **Fix:** Configuración CSRF y seguridad mejorada
+
+### 2026-04-22 — Renombre a DCIM
+- **Refactor:** Proyecto renombrado de "clases" a "DCIM"
+
+### 2025-12-29 — Corrección dependencias y controladores
+- **Fix:** `pom.xml` completo con todas las dependencias
+- **Fix:** Controlador duplicado eliminado
+
+### 2025-12-18~19 — Despliegue Koyeb, API REST Móvil
+- **Feat:** Backend API móvil con JWT, autenticación RUT/BCrypt, CRUD IngresoAP con foto y GPS
+- **Fix:** `SecurityConfig` separado para API (stateless) y web (formLogin)
+- **Fix:** Múltiples correcciones de despliegue en Koyeb
+
+### 2025-12-15 — Containerización + Configuración Producción
+- **Feat:** `Dockerfile` + `.dockerignore` para contenedorización
+- **Feat:** GitHub Actions workflow para build y push de Docker automático
+- **Fix:** `import.sql` deshabilitado en producción
+- **Docs:** README.md inicial completo
+
+### 2025-11-25 — Módulo Gestión de Accesos + Dashboard Cliente
+- **Feat:** Módulo completo de Gestión de Accesos físicos
+- **Feat:** Dashboard Cliente con contador en tiempo real
+
+### 2025-11-17~21 — Sistema completo v1
+- **Feat:** Primera versión funcional completa del sistema de gestión de ingresos
+
+### 2025-10-27 — Inicio del proyecto
+- **Init:** Spring Boot con gestión básica de usuarios e ingresos
+
+---
+
+**Versión:** 1.1.0 | **Java:** 25 LTS | **Spring Boot:** 3.5.9 | **Última actualización:** 2026-05-19
