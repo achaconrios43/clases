@@ -3,15 +3,19 @@ package com.example.dcim.controllers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.dcim.dao.PlanoSalaElementoRepository;
@@ -53,6 +57,52 @@ public class PlanoSalaController {
         return "layout-sala";
     }
 
+    /**
+     * GET /plano-sala/layout/{salaId}/datos — devuelve JSON del layout guardado
+     */
+    @GetMapping("/layout/{salaId}/datos")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getLayoutDatos(@PathVariable Long salaId) {
+        return planoSalaRepository.findFirstBySalaIdAndLayoutJsonIsNotNull(salaId)
+                .map(p -> ResponseEntity.ok(Map.<String, Object>of(
+                "gridJson", p.getLayoutJson() == null ? "{}" : p.getLayoutJson(),
+                "cols", p.getCantidadColumnas(),
+                "rows", p.getCantidadFilas()
+        )))
+                .orElse(ResponseEntity.ok(Map.<String, Object>of("gridJson", "{}", "cols", 0, "rows", 0)));
+    }
+
+    /**
+     * POST /plano-sala/layout/guardar — guarda o actualiza layout en BD
+     */
+    @PostMapping("/layout/guardar")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> guardarLayout(@RequestBody Map<String, Object> body) {
+        Object salaIdObj = body.get("salaId");
+        if (salaIdObj == null) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "salaId requerido"));
+        }
+        Long salaId = Long.valueOf(salaIdObj.toString());
+        Sala sala = salaRepository.findById(salaId).orElse(null);
+        if (sala == null) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "Sala no encontrada"));
+        }
+        String gridJson = body.getOrDefault("gridJson", "{}").toString();
+        int cols = Integer.parseInt(body.getOrDefault("cols", "10").toString());
+        int rows = Integer.parseInt(body.getOrDefault("rows", "10").toString());
+
+        PlanoSala plano = planoSalaRepository.findFirstBySalaIdAndLayoutJsonIsNotNull(salaId)
+                .orElse(new PlanoSala());
+        plano.setSala(sala);
+        plano.setCantidadColumnas(cols);
+        plano.setCantidadFilas(rows);
+        plano.setLayoutJson(gridJson);
+        plano.setDescripcion("Layout " + sala.getNombre());
+        planoSalaRepository.save(plano);
+
+        return ResponseEntity.ok(Map.of("ok", true, "id", plano.getId()));
+    }
+
     @PostMapping("/guardar")
     public String guardar(
             @RequestParam Long salaId,
@@ -84,7 +134,7 @@ public class PlanoSalaController {
         planoSalaRepository.save(plano);
 
         ra.addFlashAttribute("success",
-            "Plano creado: " + sala.getNombre() + " - " + cantidadColumnas + " col x " + cantidadFilas + " fil");
+                "Plano creado: " + sala.getNombre() + " - " + cantidadColumnas + " col x " + cantidadFilas + " fil");
         return "redirect:/plano-sala";
     }
 
@@ -241,7 +291,9 @@ public class PlanoSalaController {
     @GetMapping("/{id}")
     public String verPlano(@PathVariable Long id, Model model) {
         PlanoSala plano = planoSalaRepository.findById(id).orElse(null);
-        if (plano == null) return "redirect:/plano-sala";
+        if (plano == null) {
+            return "redirect:/plano-sala";
+        }
 
         List<String> columnLabels = new ArrayList<>();
         for (int i = 0; i < plano.getCantidadColumnas(); i++) {
@@ -271,7 +323,6 @@ public class PlanoSalaController {
     }
 
     // ---- PLANTILLAS ----
-
     @GetMapping("/plantillas")
     public String listarPlantillas(Model model) {
         model.addAttribute("plantillas", planoSalaRepository.findByEsPlantillaTrueOrderByNombrePlantillaAsc());
@@ -282,7 +333,9 @@ public class PlanoSalaController {
     @GetMapping("/plantillas/{id}")
     public String verPlantilla(@PathVariable Long id, Model model) {
         PlanoSala plano = planoSalaRepository.findById(id).orElse(null);
-        if (plano == null || !plano.isEsPlantilla()) return "redirect:/plano-sala/plantillas";
+        if (plano == null || !plano.isEsPlantilla()) {
+            return "redirect:/plano-sala/plantillas";
+        }
 
         List<String> columnLabels = new ArrayList<>();
         for (int i = 0; i < plano.getCantidadColumnas(); i++) {
@@ -382,18 +435,34 @@ public class PlanoSalaController {
     }
 
     private static String colorPorTipo(String tipo) {
-        if ("RACK".equals(tipo)) return "#4f46e5";
-        if ("BASTIDOR".equals(tipo)) return "#0ea5e9";
-        if ("PUERTA".equals(tipo)) return "#22c55e";
-        if ("MURO".equals(tipo)) return "#6b7280";
-        if ("TABLERO_ENERGIA".equals(tipo)) return "#f59e0b";
-        if ("EQUIPO_CLIMA".equals(tipo)) return "#06b6d4";
+        if ("RACK".equals(tipo)) {
+            return "#4f46e5";
+        }
+        if ("BASTIDOR".equals(tipo)) {
+            return "#0ea5e9";
+        }
+        if ("PUERTA".equals(tipo)) {
+            return "#22c55e";
+        }
+        if ("MURO".equals(tipo)) {
+            return "#6b7280";
+        }
+        if ("TABLERO_ENERGIA".equals(tipo)) {
+            return "#f59e0b";
+        }
+        if ("EQUIPO_CLIMA".equals(tipo)) {
+            return "#06b6d4";
+        }
         return "#64748b";
     }
 
     private boolean entraEnPlano(PlanoSala plano, int columnaInicio, int filaInicio, int anchoCm, int largoCm) {
-        if (columnaInicio < 1 || columnaInicio > plano.getCantidadColumnas()) return false;
-        if (filaInicio < 1 || filaInicio > plano.getCantidadFilas()) return false;
+        if (columnaInicio < 1 || columnaInicio > plano.getCantidadColumnas()) {
+            return false;
+        }
+        if (filaInicio < 1 || filaInicio > plano.getCantidadFilas()) {
+            return false;
+        }
 
         double maxAnchoCmDisponible = (plano.getCantidadColumnas() - columnaInicio + 1) * 60.0;
         double maxLargoCmDisponible = filaInicio * 60.0;

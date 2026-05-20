@@ -25,11 +25,16 @@ public class PlanoSala {
     @JoinColumn(name = "sala_id")
     private Sala sala;
 
-    /** Cantidad de columnas (Oeste→Este), cada columna = 60 cm. Etiquetas A, B, C... */
+    /**
+     * Cantidad de columnas (Oeste→Este), cada columna = 60 cm. Etiquetas A, B,
+     * C...
+     */
     @Column(name = "cantidad_columnas", nullable = false)
     private int cantidadColumnas;
 
-    /** Cantidad de filas (Norte→Sur), cada fila = 60 cm. Etiquetas 1, 2, 3... */
+    /**
+     * Cantidad de filas (Norte→Sur), cada fila = 60 cm. Etiquetas 1, 2, 3...
+     */
     @Column(name = "cantidad_filas", nullable = false)
     private int cantidadFilas;
 
@@ -42,6 +47,9 @@ public class PlanoSala {
     @Column(name = "nombre_plantilla", length = 100)
     private String nombrePlantilla;
 
+    @Column(name = "layout_json", columnDefinition = "TEXT")
+    private String layoutJson;
+
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
@@ -51,30 +59,79 @@ public class PlanoSala {
     }
 
     // Constructors
-    public PlanoSala() {}
+    public PlanoSala() {
+    }
 
     // Getters & Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Sala getSala() { return sala; }
-    public void setSala(Sala sala) { this.sala = sala; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public int getCantidadColumnas() { return cantidadColumnas; }
-    public void setCantidadColumnas(int cantidadColumnas) { this.cantidadColumnas = cantidadColumnas; }
+    public Sala getSala() {
+        return sala;
+    }
 
-    public int getCantidadFilas() { return cantidadFilas; }
-    public void setCantidadFilas(int cantidadFilas) { this.cantidadFilas = cantidadFilas; }
+    public void setSala(Sala sala) {
+        this.sala = sala;
+    }
 
-    public String getDescripcion() { return descripcion; }
-    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public int getCantidadColumnas() {
+        return cantidadColumnas;
+    }
 
-    public boolean isEsPlantilla() { return esPlantilla; }
-    public void setEsPlantilla(boolean esPlantilla) { this.esPlantilla = esPlantilla; }
+    public void setCantidadColumnas(int cantidadColumnas) {
+        this.cantidadColumnas = cantidadColumnas;
+    }
 
-    public String getNombrePlantilla() { return nombrePlantilla; }
-    public void setNombrePlantilla(String nombrePlantilla) { this.nombrePlantilla = nombrePlantilla; }
+    public int getCantidadFilas() {
+        return cantidadFilas;
+    }
 
-    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
-    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    public void setCantidadFilas(int cantidadFilas) {
+        this.cantidadFilas = cantidadFilas;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public boolean isEsPlantilla() {
+        return esPlantilla;
+    }
+
+    public void setEsPlantilla(boolean esPlantilla) {
+        this.esPlantilla = esPlantilla;
+    }
+
+    public String getNombrePlantilla() {
+        return nombrePlantilla;
+    }
+
+    public void setNombrePlantilla(String nombrePlantilla) {
+        this.nombrePlantilla = nombrePlantilla;
+    }
+
+    public String getLayoutJson() {
+        return layoutJson;
+    }
+
+    public void setLayoutJson(String layoutJson) {
+        this.layoutJson = layoutJson;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
 }

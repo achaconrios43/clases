@@ -15,4 +15,6 @@ public interface PlanoSalaRepository extends JpaRepository<PlanoSala, Long> {
     List<PlanoSala> findByEsPlantillaTrueOrderByNombrePlantillaAsc();
 
     List<PlanoSala> findByEsPlantillaFalseOrderByFechaCreacionDesc();
+
+    java.util.Optional<PlanoSala> findFirstBySalaIdAndLayoutJsonIsNotNull(Long salaId);
 }
