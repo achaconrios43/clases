@@ -1,30 +1,23 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle de Gestión</title>
-    <div th:replace="fragments/headers :: headers"></div>
-  </head>
-  <body class="bg-gray-100">
-    <div th:replace="fragments/navdar :: nav"></div>
-    <div th:replace="fragments/dashboard-button :: navigation-buttons"></div>
+  <head th:replace="~{fragments/headers :: headers}"></head>
+  <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
+    <nav th:replace="~{fragments/navdar :: nav}"></nav>
 
-    <div class="container mx-auto px-4 py-8">
-      <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold text-gray-800">
-            <i class="fas fa-file-alt mr-2 text-accent"></i>Detalle de Gestión 
-          </h1>
-          <div class="space-x-2">
-            <a th:href="@{/gestion/edit/{id}(id=${gestion.id})}" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-              <i class="fas fa-edit mr-2"></i>Editar
-            </a>
-            <a href="/gestion/list" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
-              <i class="fas fa-arrow-left mr-2"></i>Volver
-            </a>
-          </div>
-        </div>
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a href="/gestion/list" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Gestiones</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">📦 Detalle de Gestión</span>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a th:href="@{/gestion/edit/{id}(id=${gestion.id})}" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;">✏️ Editar</a>
+    <a href="/gestion/list" style="background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none; border:1px solid rgba(255,255,255,0.2);">← Volver</a>
+  </div>
+</div>
+
+<main class="flex-1" style="padding:28px 24px; max-width:1200px; margin:0 auto; width:100%; box-sizing:border-box;">
 
         <div class="space-y-4">
           <div class="bg-blue-50 p-4 rounded-lg">
@@ -163,7 +156,7 @@
               </div>
             </div>
       </div>
-    </div>
+    </main>
 
     <footer th:replace="~{fragments/footer :: footer}"></footer>
   </body>

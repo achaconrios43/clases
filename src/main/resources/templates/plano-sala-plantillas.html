@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="fragments/headers :: headers"></head>
-<body class="min-h-screen flex flex-col bg-gray-50">
-<nav th:replace="fragments/navdar :: nav"></nav>
+<head th:replace="~{fragments/headers :: headers}"></head>
+<body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
+<nav th:replace="~{fragments/navdar :: nav}"></nav>
 
  <!-- Header -->
   <div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:20px 32px; display:flex; align-items:center; gap:14px;">
@@ -12,8 +12,7 @@
     <span style="color:#fff; font-weight:800; font-size:15px;">📐 Plantillas Salas</span>
   </div>
 
-<main class="flex-1 py-8">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+<main class="flex-1" style="padding:28px 24px; max-width:1200px; margin:0 auto; width:100%; box-sizing:border-box;">
 
     <!-- Encabezado -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -87,7 +86,6 @@
       </div>
     </div>
 
-  </div>
 </main>
 
 <!-- Modal: Aplicar plantilla a sala -->

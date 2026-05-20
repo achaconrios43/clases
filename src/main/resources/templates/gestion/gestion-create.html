@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Accesos</title>
-    <div th:replace="fragments/headers :: headers"></div>
-  </head>
-  <body class="bg-gray-100">
-    <div th:replace="fragments/navdar :: nav"></div>
+  <head th:replace="~{fragments/headers :: headers}"></head>
+  <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
+    <nav th:replace="~{fragments/navdar :: nav}"></nav>
 
-    <div class="container mx-auto px-4 py-8">
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a href="/dashboard" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Dashboard</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <a href="/gestion/list" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">Gestiones</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">📦 Nueva Gestión</span>
+  </div>
+</div>
+
+<main class="flex-1" style="padding:28px 24px; max-width:1200px; margin:0 auto; width:100%; box-sizing:border-box;">
       <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
         <!-- Encabezado -->
         <div class="flex justify-between items-start mb-6">
           <div>
-            <h1 class="text-3xl font-bold text-gray-800">
-              <i class="fas fa-shield-alt mr-2 text-accent"></i>
-              Gestión de Accesos
-            </h1>
+          
             <p class="text-gray-600 mt-2">Complete el formulario para registrar una gestión de acceso al data center</p>
           </div>
-          <a th:href="@{/dashboard}" class="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-300 hover:shadow-lg flex-shrink-0">
-            <i class="fas fa-home mr-2"></i>Dashboard
-          </a>
         </div>
 
         <!-- Formulario -->
@@ -130,7 +130,7 @@
                   El seguimiento y comentarios estará disponible una vez que haya un registro de ingreso asociado a este ticket.
                 </p>
               </div>
-              <a id="btnRegistroTecnico" href="/ingreso/ap"
+              <a id="btnRegistroTecnico" href="/ingresoap"
                  target="_blank"
                  class="inline-flex items-center px-5 py-2 bg-gradient-to-r from-green-600 to-emerald-500 text-white text-sm font-bold rounded-lg shadow hover:shadow-md transition-all">
                 <i class="fas fa-sign-in-alt mr-2"></i>Registrar Ingreso de Técnico
@@ -363,7 +363,7 @@
           </div>
         </form>
       </div>
-    </div>
+    </main>
 
     <footer th:replace="~{fragments/footer :: footer}"></footer>
     

@@ -1,34 +1,24 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-  <head th:replace="fragments/headers :: headers"></head>
-  <body>
+  <head th:replace="~{fragments/headers :: headers}"></head>
+  <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
     <nav th:replace="~{fragments/navdar :: nav}"></nav>
-    <style>
-      /* Static 3D card look in Telefónica colors */
-      .card-3d {
-        background: linear-gradient(180deg,#ffffff 0%, #f4fbff 100%);
-        border-radius: 14px;
-        box-shadow: 0 20px 50px rgba(0,61,165,0.12), inset 0 -8px 18px rgba(0,0,0,0.02);
-        border: 1px solid rgba(0,61,165,0.08);
-        color: #002B5C;
-      }
-      .table-3d thead tr { background: linear-gradient(180deg,#eaf6ff 0%, #dff3ff 100%); }
-      .table-3d th { color: #003DA5; font-weight:700; }
-      .table-3d td { background: transparent; }
-      .btn-3d { background: linear-gradient(90deg,#003DA5,#00A1E6); color:#fff; padding:.45rem .7rem; border-radius:10px; border:none; }
-      /* explicitly disable motion */
-      .no-motion { transition: none !important; animation: none !important; }
-    </style>
-    <main class="max-w-5xl mx-auto p-6">
-      <div class="card-3d no-motion p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h1 class="text-2xl font-bold">Listado de usuarios</h1>
-          <a th:href="@{/dashboard}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white" style="background:linear-gradient(90deg,#003DA5,#00A1E6);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Volver al Dashboard
-          </a>
-        </div>
-        <table class="min-w-full table-auto border-collapse table-3d">
+
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a href="/dashboard" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Dashboard</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">👤 Usuarios</span>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="/user/create" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;">+ Crear Usuario</a>
+  </div>
+</div>
+
+<main class="flex-1" style="padding:28px 24px; max-width:1200px; margin:0 auto; width:100%; box-sizing:border-box;">
+      <div style="background:#fff; border-radius:14px; border:1px solid rgba(11,60,117,0.08); box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:24px; overflow-x:auto;">
+        <table class="min-w-full table-auto border-collapse" style="font-size:14px;">
           <thead>
             <tr class="bg-gray-100">
               <th class="px-4 py-2 text-left">#</th>
@@ -67,6 +57,7 @@
         </table>
       </div>
     </main>
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
     <script>
       function goToIngreso(btn){
         if(!btn) return;

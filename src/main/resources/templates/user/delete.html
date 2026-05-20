@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments/headers :: headers}"></head>
-  <body>
+  <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
     <nav th:replace="~{fragments/navdar :: nav}"></nav>
-    <main class="max-w-3xl mx-auto p-6">
-      <div class="card-3d p-6">
-        <h2 class="text-xl font-bold" style="color:#002B5C;">Confirmar eliminación</h2>
-        <p class="text-sm" style="color:#003DA5; margin-top:6px;">Estás a punto de eliminar el registro siguiente:</p>
+
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a href="/user/list" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Usuarios</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">🗑️ Eliminar Usuario</span>
+  </div>
+</div>
+
+    <main class="flex-1" style="padding:28px 24px; max-width:760px; margin:0 auto; width:100%; box-sizing:border-box;">
+      <div style="background:#fff; border-radius:14px; border:1px solid rgba(11,60,117,0.08); box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:24px;">
+        <h2 style="font-size:1.2rem; font-weight:700; color:#003DA5; margin:0 0 8px;">Confirmar eliminación</h2>
+        <p style="font-size:.875rem; color:#64748b; margin:0 0 14px;">Estás a punto de eliminar el registro siguiente:</p>
         <div style="margin-top:12px; background:linear-gradient(90deg,#f7fbff,#eef8ff); padding:12px; border-radius:8px; border:1px solid rgba(0,61,165,0.06);">
           <div><strong>Nombre:</strong> <span th:text="${usuario['nombre']}"></span></div>
           <div><strong>Apellido:</strong> <span th:text="${usuario['apellido']}"></span></div>
@@ -16,10 +26,11 @@
 
         <form th:action="@{/user/delete}" method="post" style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
           <input type="hidden" name="idx" th:value="${idx}" />
-          <a th:href="@{/user/list}" class="btn-3d" style="background:#e2e8f0; color:#04204a; display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1rem; border-radius:10px;">No</a>
-          <button type="submit" class="btn-3d" style="background:linear-gradient(90deg,#003DA5,#00A1E6);">Sí, eliminar</button>
+          <a th:href="@{/user/list}" style="background:#e2e8f0; color:#04204a; display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1rem; border-radius:10px; text-decoration:none; font-size:.875rem; font-weight:600;">No</a>
+          <button type="submit" style="background:linear-gradient(90deg,#dc2626,#b91c1c); color:#fff; border:none; padding:.6rem 1.25rem; border-radius:10px; font-size:.875rem; font-weight:600; cursor:pointer;">Sí, eliminar</button>
         </form>
       </div>
     </main>
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
   </body>
 </html>

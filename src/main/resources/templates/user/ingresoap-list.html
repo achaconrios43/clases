@@ -1,31 +1,29 @@
 <!DOCTYPE html>
-<html lang="es">
-<head th:replace="fragments/headers :: headers"></head>
-<body class="min-h-screen flex flex-col bg-gray-50">
-    <nav th:replace="fragments/navdar :: nav"></nav>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/headers :: headers}"></head>
+<body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
+    <nav th:replace="~{fragments/navdar :: nav}"></nav>
     
-    <main class="flex-1 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a th:href="@{/dashboard}" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Dashboard</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">📦 Lista de Accesos Data Center</span>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a th:href="@{/ingresoap}" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;">+ Nuevo Ingreso</a>
+  </div>
+</div>
+
+    <main class="flex-1" style="padding:28px 24px; max-width:1400px; margin:0 auto; width:100%; box-sizing:border-box;">
             <!-- Header -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Lista de Accesos Data Center</h1>
                         <p class="text-gray-600 mt-1">Registro completo de ingresos técnicos al Data Center</p>
                     </div>
                     <div class="flex space-x-3">
-                        <a th:href="@{/ingresoap}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Nuevo Ingreso
-                        </a>
-                        <a th:href="@{/dashboard}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                            </svg>
-                            Dashboard
-                        </a>
+                                      
 
                     </div>
                 </div>
@@ -703,7 +701,6 @@
                 </div>
             </div>
 
-        </div>
     </main>
 
     <footer th:replace="~{fragments/footer :: footer}"></footer>

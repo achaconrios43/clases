@@ -1,32 +1,24 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${titulo}">Gestión de Accesos</title>
-    <div th:replace="fragments/headers :: headers"></div>
-  </head>
-  <body class="bg-gray-100">
-    <div th:replace="~{fragments/navdar :: nav}"></div>
+  <head th:replace="~{fragments/headers :: headers}"></head>
+  <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
+    <nav th:replace="~{fragments/navdar :: nav}"></nav>
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a href="/dashboard" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Dashboard</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">📦 Gestión de Accesos</span>
+    <span style="background:rgba(255,255,255,0.2); color:#fff; font-size:12px; font-weight:700; padding:3px 10px; border-radius:99px;"
+          th:text="${total} + ' registros'">0 registros</span>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="/gestion/create" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;">+ Nueva Gestión</a>
+  </div>
+</div>
 
-    <div class="container mx-auto px-4 py-8">
-      <div class="bg-white rounded-lg shadow-lg p-6">
-        <!-- Encabezado -->
-        <div class="flex justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold text-gray-800">
-            <i class="fas fa-clipboard-list mr-2 text-accent"></i>
-            <span th:text="${titulo}">Gestión de Accesos</span>
-          </h1>
-          <div class="flex items-center gap-3">
-            <a th:href="@{/dashboard}" class="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-300 hover:shadow-lg">
-              <i class="fas fa-home mr-2"></i>Dashboard
-            </a>
-            <a href="/gestion/create" class="inline-flex items-center px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all duration-300">
-              <i class="fas fa-plus mr-2"></i>Nueva Gestión
-            </a>
-          </div>
-        </div>
-
+<main class="flex-1" style="padding:28px 24px; max-width:1200px; margin:0 auto; width:100%; box-sizing:border-box;">
+     
         <!-- Mensajes de alerta -->
         <div th:if="${success}" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
           <i class="fas fa-check-circle mr-2"></i>
@@ -180,6 +172,8 @@
         </div>
       </div>
     </div>
+
+    </main>
 
     <footer th:replace="~{fragments/footer :: footer}"></footer>
 

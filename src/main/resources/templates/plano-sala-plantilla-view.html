@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
 <head th:replace="~{fragments/headers :: headers}"></head>
 <style>
     :root { --cell-size: 38px; }
@@ -43,34 +43,28 @@
     .tipo-BASTIDOR { z-index: 45; }
     .tipo-RACK { z-index: 50; }
 </style>
-<body class="bg-gray-100">
+
+<body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
 <nav th:replace="~{fragments/navdar :: nav}"></nav>
 
-<div class="container mx-auto px-4 py-6 max-w-full space-y-4">
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#1e3a5f,#0b3c75); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a href="/plano-sala/plantillas" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Plantillas</a>
+    <span style="color:rgba(255,255,255,0.4);"> /</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;" th:text="'📐 ' + ${plano.nombrePlantilla}">📐 Plantilla</span>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button sec:authorize="hasAnyRole('ADMIN','USER')"
+            onclick="document.getElementById('modalAplicar').classList.remove('hidden')"
+            style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">
+      ✅ Aplicar a sala
+    </button>
+    <a href="/plano-sala/plantillas" style="background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none; border:1px solid rgba(255,255,255,0.2);">← Volver a plantillas</a>
+  </div>
+</div>
 
-    <!-- Encabezado -->
-    <div class="bg-white rounded-xl shadow-sm border border-indigo-200 p-5">
-        <div class="flex items-start justify-between flex-wrap gap-3">
-            <div>
-                <div class="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full inline-block mb-2">PLANTILLA</div>
-                <h1 class="text-2xl font-bold text-gray-900" th:text="${plano.nombrePlantilla}">Nombre plantilla</h1>
-                <p class="text-gray-500 text-sm mt-1"
-                   th:text="${(plano.sala != null ? plano.sala.nombre : '?') + ' · ' + plano.cantidadColumnas + ' col × ' + plano.cantidadFilas + ' fil · ' + areaTotalM2 + ' m²'}"></p>
-                <p class="text-gray-400 text-xs mt-1" th:if="${plano.descripcion}" th:text="${plano.descripcion}"></p>
-            </div>
-            <div class="flex gap-3 flex-wrap">
-                <!-- Aplicar a sala: solo ADMIN/USER -->
-                <button sec:authorize="hasAnyRole('ADMIN','USER')"
-                        onclick="document.getElementById('modalAplicar').classList.remove('hidden')"
-                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-                    ✅ Aplicar a sala
-                </button>
-                <a href="/plano-sala/plantillas" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors">
-                    ← Volver a plantillas
-                </a>
-            </div>
-        </div>
-    </div>
+<main class="flex-1" style="padding:28px 24px; max-width:1600px; margin:0 auto; width:100%; box-sizing:border-box;">
 
     <!-- Grilla (solo lectura) -->
     <div class="bg-white rounded-xl shadow p-4">
@@ -149,7 +143,7 @@
         Esta plantilla no tiene elementos colocados.
     </div>
 
-</div>
+</main>
 
 <!-- Modal: Aplicar plantilla a sala -->
 <div id="modalAplicar" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">

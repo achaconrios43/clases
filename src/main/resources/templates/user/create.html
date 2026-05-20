@@ -1,21 +1,19 @@
 ﻿<!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
   <head th:replace="~{fragments/headers :: headers}"></head>
-  <body style="background:#f0f4f8; min-height:100vh;">
+  <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
     <nav th:replace="~{fragments/navdar :: nav}"></nav>
 
-    <main style="max-width:760px; margin:2.5rem auto; padding:0 1rem;">
+<!-- Page Header -->
+<div style="background:linear-gradient(90deg,#0f4c75,#1b6ca8); padding:22px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <a href="/user/list" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Usuarios</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#ffffff; font-weight:800; font-size:15px;">👤 Registrar Usuario</span>
+  </div>
+</div>
 
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
-        <div>
-          <h1 style="font-size:1.5rem; font-weight:700; color:#003DA5; margin:0 0 .2rem;">Registrar Usuario</h1>
-          <p style="font-size:.85rem; color:#64748b; margin:0;">Complete todos los campos para crear la cuenta</p>
-        </div>
-        <a th:href="@{/dashboard}" style="display:inline-flex; align-items:center; gap:.4rem; padding:.5rem 1rem; border-radius:8px; background:linear-gradient(90deg,#003DA5,#00A1E6); color:#fff; font-size:.85rem; font-weight:600; text-decoration:none;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          Volver al Dashboard
-        </a>
-      </div>
+    <main style="max-width:760px; margin:2rem auto; padding:0 1rem; flex:1;">
 
       <div th:if="${errorMessage}" style="display:flex; align-items:center; gap:.75rem; padding:.9rem 1.1rem; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; margin-bottom:1.25rem;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -246,6 +244,7 @@
       </form>
     </main>
 
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
     <script>
       (function () {
         var rolSelect = document.getElementById('rolSelect');
