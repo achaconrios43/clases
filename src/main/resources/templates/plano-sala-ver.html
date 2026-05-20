@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/headers :: headers}"></head>
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; }
+    #printArea { box-shadow: none !important; }
+  }
+</style>
+<body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
+<nav th:replace="~{fragments/navdar :: nav}" class="no-print"></nav>
+
+<!-- Header -->
+<div class="no-print" style="background:linear-gradient(90deg,#1e3a5f,#0b3c75); padding:14px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+  <div style="display:flex; align-items:center; gap:14px;">
+    <a href="/plano-sala" style="color:rgba(255,255,255,0.75); font-size:13px; text-decoration:none; font-weight:600;">← Planos</a>
+    <span style="color:rgba(255,255,255,0.4);">/</span>
+    <span style="color:#fff; font-weight:800; font-size:15px;"
+          th:text="'🗺️ ' + ${plano.sala.sitio.nombre} + ' › ' + ${plano.sala.nombre}">🗺️ Sala</span>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a th:href="@{/plano-sala/editar/{id}(id=${plano.id})}"
+       style="background:rgba(5,150,105,0.85); color:#fff; padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none; border:1px solid rgba(255,255,255,0.2);">✏️ Editar plano</a>
+    <button id="measureBtn" onclick="toggleMeasure()"
+            style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">📏 Medir distancia</button>
+    <button onclick="window.print()"
+            style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">🖨️ Imprimir / PDF</button>
+    <a href="/plano-sala"
+       style="background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none; border:1px solid rgba(255,255,255,0.2);">Volver</a>
+  </div>
+</div>
+
+<!-- Print-only title -->
+<div style="display:none;" class="print-only" id="printTitle">
+  <div style="text-align:center; padding:14px 0 4px; font-size:18px; font-weight:800; color:#0b3c75;">
+    Plano de Sala — <span th:text="${plano.sala.sitio.nombre + ' › ' + plano.sala.nombre}"></span>
+  </div>
+</div>
+
+<!-- Info bar -->
+<div id="printArea" style="padding:20px 28px; max-width:1600px; margin:0 auto; width:100%; box-sizing:border-box;">
+
+  <!-- Meta row -->
+  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px; align-items:flex-start;">
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 18px; display:flex; flex-direction:column; gap:3px;">
+      <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Sitio</span>
+      <span style="font-size:14px; font-weight:700; color:#0b3c75;" th:text="${plano.sala.sitio.nombre}"></span>
+    </div>
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 18px; display:flex; flex-direction:column; gap:3px;">
+      <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Sala</span>
+      <span style="font-size:14px; font-weight:700; color:#0b3c75;" th:text="${plano.sala.nombre}"></span>
+    </div>
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 18px; display:flex; flex-direction:column; gap:3px;">
+      <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Dimensiones</span>
+      <span style="font-size:14px; font-weight:700; color:#1d4ed8; font-family:monospace;"
+            th:text="${#numbers.formatDecimal(plano.cantidadColumnas * 0.6, 1, 1) + ' × ' + #numbers.formatDecimal(plano.cantidadFilas * 0.6, 1, 1) + ' m'}"></span>
+    </div>
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 18px; display:flex; flex-direction:column; gap:3px;">
+      <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Área total</span>
+      <span style="font-size:14px; font-weight:700; color:#059669; font-family:monospace;"
+            th:text="${#numbers.formatDecimal(plano.cantidadColumnas * 0.6 * plano.cantidadFilas * 0.6, 1, 2) + ' m²'}"></span>
+    </div>
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 18px; display:flex; flex-direction:column; gap:3px;">
+      <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.06em;">Palmetas</span>
+      <span style="font-size:14px; font-weight:700; color:#374151; font-family:monospace;"
+            th:text="${plano.cantidadColumnas + ' col × ' + plano.cantidadFilas + ' fil'}"></span>
+    </div>
+  </div>
+
+  <!-- No layout warning -->
+  <div th:if="${plano.layoutJson == null or #strings.isEmpty(plano.layoutJson) or plano.layoutJson == '{}'}"
+       style="background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; padding:18px 24px; color:#92400e; font-weight:600; font-size:14px; margin-bottom:16px;">
+    ⚠️ Este plano aún no tiene un diseño dibujado. Haz clic en <strong>Editar plano</strong> para comenzar a diseñarlo.
+  </div>
+
+  <!-- Sheet tabs (shown for multi-sheet plans) -->
+  <div id="sheetTabsVer" style="display:none; margin-bottom:10px; display:flex; gap:6px; flex-wrap:wrap;"></div>
+
+  <!-- Grid canvas rendered by JS -->
+  <div style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); overflow:auto;">
+    <div id="canvasWrapper" style="display:inline-block; min-width:100%; box-sizing:border-box;">
+      <div style="text-align:center; padding:40px; color:#9ca3af; font-size:13px;">Cargando plano…</div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div id="legendBox" style="margin-top:16px; background:#fff; border-radius:10px; border:1px solid #e2e8f0; padding:14px 20px; display:none;">
+    <div style="font-size:11px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">Leyenda</div>
+    <div id="legendItems" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+  </div>
+
+  <!-- Distance measurement result -->
+  <div id="measureResult" class="no-print" style="display:none; margin-top:14px; background:#fff; border-radius:12px; border:2px solid #f59e0b; padding:16px 22px; box-shadow:0 4px 16px rgba(245,158,11,0.15);">
+    <div style="font-size:12px; font-weight:700; color:#d97706; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">📏 Distancia medida</div>
+    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start;">
+      <div style="background:#fef3c7; border-radius:8px; padding:10px 16px;">
+        <div style="font-size:11px; color:#92400e; font-weight:600;">Posiciones</div>
+        <div style="font-size:15px; font-weight:800; color:#1e293b; font-family:monospace; margin-top:2px;">
+          <span id="mCoord1" style="background:#fde68a; padding:1px 7px; border-radius:4px;"></span>
+          <span style="color:#94a3b8; margin:0 4px;">→</span>
+          <span id="mCoord2" style="background:#bbf7d0; padding:1px 7px; border-radius:4px;"></span>
+        </div>
+        <div id="mDelta" style="font-size:11px; color:#6b7280; margin-top:4px; font-family:monospace;"></div>
+      </div>
+      <div style="background:#f0fdf4; border-radius:8px; padding:10px 16px;">
+        <div style="font-size:11px; color:#166534; font-weight:600;">Distancia por cable (Manhattan)</div>
+        <div id="mManhattan" style="font-size:16px; font-weight:800; color:#15803d; font-family:monospace; margin-top:2px;"></div>
+      </div>
+      <div style="background:#eff6ff; border-radius:8px; padding:10px 16px;">
+        <div style="font-size:11px; color:#1e40af; font-weight:600;">Distancia en línea recta</div>
+        <div id="mEuclidean" style="font-size:16px; font-weight:800; color:#1d4ed8; font-family:monospace; margin-top:2px;"></div>
+      </div>
+      <button onclick="document.getElementById('measureResult').style.display='none'; document.querySelectorAll('[data-coord]').forEach(function(e){e.style.outline='';})"
+              style="align-self:flex-start; padding:6px 14px; background:#fee2e2; border:1px solid #fca5a5; border-radius:7px; font-size:12px; font-weight:600; color:#991b1b; cursor:pointer;">✕ Cerrar</button>
+    </div>
+  </div>
+
+</div>
+
+<footer th:replace="~{fragments/footer :: footer}" class="no-print"></footer>
+
+<!-- Pass server data to JS -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+var PLANO_COLS   = /*[[${plano.cantidadColumnas}]]*/ 0;
+var PLANO_ROWS   = /*[[${plano.cantidadFilas}]]*/ 0;
+var LAYOUT_JSON  = /*[[${plano.layoutJson != null ? plano.layoutJson : '{}'}]]*/ '{}';
+/*]]>*/
+</script>
+
+<script>
+// ── Tile type definitions (same as editor) ───────────────────────
+var ITEM_TYPES = [
+  { id: 'utilizada',       label: 'Posición utilizada',      bg: '#2563eb',     border: '1px solid #1e40af',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'libre',           label: 'Posición libre',           bg: '#dcfce7',     border: '2px solid #22c55e',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'fms200',          label: 'Sistema FM200',            bg: '#6b0202',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
+  { id: 'eeaa',            label: 'Sistema Climatización',    bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'FM', tc: '#fff',    scale: false },
+];
+
+// ── Overlay / Infrastructure type definitions (same as editor) ────
+var OVERLAY_TYPES = [
+  { id: 'muro',              label: 'Muro / Pared',           bg: 'repeating-linear-gradient(45deg,#374151 0,#374151 5px,#1f2937 5px,#1f2937 10px)', border: '2px solid #111827', br: '0',   text: '',   tc: '#fff'    },
+  { id: 'puerta',            label: 'Puerta abierta',          bg: 'rgba(248,250,252,0.93)',  border: '3px solid #0f172a', br: '0 0 50% 0', text: '↗', tc: '#0f172a' },
+  { id: 'escalerilla',       label: 'Escalerilla de cable',    bg: 'repeating-linear-gradient(0deg,#78350f 0,#78350f 3px,rgba(254,215,170,0.28) 3px,rgba(254,215,170,0.28) 12px)', border: '2px solid #92400e', br: '2px', text: '', tc: '#fff' },
+  { id: 'bajo_piso_azul',    label: 'Bajo Piso — Azul',        bg: 'rgba(59,130,246,0.42)',   border: '1px solid #2563eb',  br: '2px', text: '▣',  tc: '#eff6ff' },
+  { id: 'bajo_piso_rojo',    label: 'Bajo Piso — Rojo',        bg: 'rgba(239,68,68,0.42)',    border: '1px solid #dc2626',  br: '2px', text: '▣',  tc: '#fef2f2' },
+  { id: 'bajo_piso_verde',   label: 'Bajo Piso — Verde',       bg: 'rgba(34,197,94,0.42)',    border: '1px solid #16a34a',  br: '2px', text: '▣',  tc: '#f0fdf4' },
+  { id: 'bajo_piso_naranja', label: 'Bajo Piso — Naranja',     bg: 'rgba(249,115,22,0.42)',   border: '1px solid #ea580c',  br: '2px', text: '▣',  tc: '#fff7ed' },
+];
+
+// ── Multi-sheet state ─────────────────────────────────────────────
+var allSheetsVer  = {};
+var sheetCountVer = 1;
+var activeSheetVer = 1;
+
+function getColLetter(col) {
+  var s = '', i = col;
+  while (i >= 0) { s = String.fromCharCode((i % 26) + 65) + s; i = Math.floor(i / 26) - 1; }
+  return s;
+}
+
+// ── Render a single sheet's grid ─────────────────────────────────
+function renderSheetGrid(gridData) {
+  var cols = PLANO_COLS, rows = PLANO_ROWS;
+  if (cols < 1 || rows < 1) { document.getElementById('canvasWrapper').innerHTML = ''; return; }
+  var CELL = 44, HDR = 34;
+  var usedTypes = {}, h = '';
+
+  h += '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:8px; user-select:none;">';
+  h += '<div style="display:flex; align-items:center; gap:10px; margin-left:' + HDR + 'px;">'
+     + '<span style="color:#9ca3af; font-size:10px; font-weight:700; letter-spacing:.08em;">NORTE ↑</span>'
+     + '<span style="color:#2563eb; font-size:11px; font-weight:700; background:#eff6ff; padding:2px 10px; border-radius:999px; border:1px solid #bfdbfe;">' + (cols * 0.6).toFixed(1) + ' m</span>'
+     + '</div>';
+  h += '<div style="display:flex; align-items:center; gap:6px;">';
+  h += '<div style="display:flex; flex-direction:column; align-items:center; writing-mode:vertical-rl; transform:rotate(180deg); color:#9ca3af; font-size:9px; font-weight:700; letter-spacing:.08em; padding:4px 0;">← OESTE<br><span style="color:#2563eb; font-size:10px; background:#eff6ff; padding:2px 4px; border-radius:6px; margin-top:4px;">' + (rows * 0.6).toFixed(1) + 'm</span></div>';
+  h += '<div style="display:grid; grid-template-columns:' + HDR + 'px repeat(' + cols + ', ' + CELL + 'px); gap:1px; background:#e5e7eb; border:2px solid #94a3b8;">';
+  h += '<div style="width:' + HDR + 'px; height:28px; background:#f1f5f9; border-right:2px solid #cbd5e1;"></div>';
+  for (var c = 0; c < cols; c++) {
+    h += '<div style="height:28px; background:#eff6ff; display:flex; align-items:center; justify-content:center; font-weight:700; color:#1e40af; border-bottom:2px solid #bfdbfe; font-size:10px;">' + getColLetter(c) + '</div>';
+  }
+  for (var r = 0; r < rows; r++) {
+    h += '<div style="width:' + HDR + 'px; height:' + CELL + 'px; background:#eff6ff; display:flex; align-items:center; justify-content:flex-end; padding-right:4px; font-weight:700; color:#1e40af; border-right:2px solid #bfdbfe; font-size:10px;">' + (r + 1) + '</div>';
+    for (var cc = 0; cc < cols; cc++) {
+      var coord = getColLetter(cc) + '-' + (r + 1);
+      var cd = gridData[coord];
+      var cellOpen = '<div data-coord="' + coord + '" style="width:' + CELL + 'px; height:' + CELL + 'px; background:#f9fafb; position:relative;">';
+      if (cd) {
+        var tool = null;
+        if (cd.type) { for (var ti = 0; ti < ITEM_TYPES.length; ti++) { if (ITEM_TYPES[ti].id === cd.type) { tool = ITEM_TYPES[ti]; break; } } }
+        var baseHtml = '', ovlHtml = '';
+        if (tool) {
+          usedTypes[cd.type] = tool;
+          var top = cd.norte !== undefined ? cd.norte : 5, bottom = cd.sur !== undefined ? cd.sur : 5;
+          var left = cd.oeste !== undefined ? cd.oeste : 5, right = cd.este !== undefined ? cd.este : 5;
+          baseHtml = '<div style="position:absolute;top:' + top + '%;bottom:' + bottom + '%;left:' + left + '%;right:' + right + '%;'
+                   + 'background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + (tool.scale ? '50%' : tool.br) + ';'
+                   + 'display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:' + tool.tc + ';z-index:10;pointer-events:none;'
+                   + (tool.scale ? 'transform:scale(0.75);' : '') + '">' + tool.text + '</div>';
+        }
+        if (cd.overlay) {
+          var ovl = null;
+          for (var oi = 0; oi < OVERLAY_TYPES.length; oi++) { if (OVERLAY_TYPES[oi].id === cd.overlay) { ovl = OVERLAY_TYPES[oi]; break; } }
+          if (ovl) {
+            usedTypes[cd.overlay] = ovl;
+            ovlHtml = '<div style="position:absolute;top:0;bottom:0;left:0;right:0;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:12px;color:' + ovl.tc + ';z-index:20;pointer-events:none;">' + ovl.text + '</div>';
+          }
+        }
+        h += cellOpen + baseHtml + ovlHtml
+           + '<div style="position:absolute;bottom:1px;right:2px;font-size:7px;color:#d1d5db;z-index:25;">' + coord + '</div></div>';
+      } else {
+        h += cellOpen + '<div style="position:absolute;bottom:1px;right:2px;font-size:7px;color:#e5e7eb;">' + coord + '</div></div>';
+      }
+    }
+  }
+  h += '</div>'; // grid
+  h += '<div style="display:flex; flex-direction:column; align-items:center; writing-mode:vertical-rl; color:#9ca3af; font-size:9px; font-weight:700; letter-spacing:.08em; padding:4px 0;">ESTE →<br><span style="color:#2563eb; font-size:10px; background:#eff6ff; padding:2px 4px; border-radius:6px; margin-top:4px;">' + (rows * 0.6).toFixed(1) + 'm</span></div>';
+  h += '</div>'; // flex row
+  h += '<div style="display:flex; align-items:center; gap:10px; margin-left:' + HDR + 'px;">'
+     + '<span style="color:#9ca3af; font-size:10px; font-weight:700; letter-spacing:.08em;">SUR ↓</span>'
+     + '<span style="color:#2563eb; font-size:11px; font-weight:700; background:#eff6ff; padding:2px 10px; border-radius:999px; border:1px solid #bfdbfe;">' + (cols * 0.6).toFixed(1) + ' m</span>'
+     + '</div>';
+  h += '</div>'; // outer flex col
+
+  document.getElementById('canvasWrapper').innerHTML = h;
+
+  // Legend
+  var usedKeys = Object.keys(usedTypes);
+  var legendBox = document.getElementById('legendBox');
+  if (usedKeys.length > 0) {
+    legendBox.style.display = 'block';
+    var legendItems = document.getElementById('legendItems');
+    legendItems.innerHTML = '';
+    usedKeys.forEach(function (k) {
+      var tool = usedTypes[k];
+      var item = document.createElement('div');
+      item.style.cssText = 'display:flex; align-items:center; gap:7px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:5px 10px;';
+      item.innerHTML = '<div style="width:20px;height:20px;flex-shrink:0;background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + (tool.scale ? '50%' : tool.br) + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:' + tool.tc + ';">' + tool.text + '</div>'
+                     + '<span style="font-size:12px;font-weight:600;color:#374151;">' + tool.label + '</span>';
+      legendItems.appendChild(item);
+    });
+  } else {
+    legendBox.style.display = 'none';
+  }
+}
+
+// ── Switch sheet tab ──────────────────────────────────────────────
+function switchVerSheet(n) {
+  activeSheetVer = n;
+  for (var i = 1; i <= sheetCountVer; i++) {
+    var btn = document.getElementById('verTabBtn_' + i);
+    if (btn) {
+      var active = (i === n);
+      btn.style.background  = active ? '#0b3c75' : '#fff';
+      btn.style.color       = active ? '#fff'    : '#374151';
+      btn.style.borderColor = active ? '#0b3c75' : '#d1d5db';
+    }
+  }
+  renderSheetGrid(allSheetsVer[n] || {});
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Parse JSON from server (v2 multi-sheet or legacy single-sheet)
+  try {
+    var parsed = typeof LAYOUT_JSON === 'string' ? JSON.parse(LAYOUT_JSON) : LAYOUT_JSON;
+    if (parsed && parsed._v === 2 && parsed.sheets) {
+      sheetCountVer = parsed.sheetCount || 1;
+      for (var i = 1; i <= sheetCountVer; i++) { allSheetsVer[i] = parsed.sheets[i] || parsed.sheets[String(i)] || {}; }
+    } else {
+      allSheetsVer = { 1: (parsed && typeof parsed === 'object' ? parsed : {}) };
+      sheetCountVer = 1;
+    }
+  } catch (e) { allSheetsVer = {1:{}}; sheetCountVer = 1; }
+
+  // Build sheet tabs if more than 1
+  var tabsDiv = document.getElementById('sheetTabsVer');
+  if (sheetCountVer > 1) {
+    tabsDiv.style.display = 'flex';
+    for (var j = 1; j <= sheetCountVer; j++) {
+      (function (n) {
+        var btn = document.createElement('button');
+        btn.id = 'verTabBtn_' + n;
+        btn.type = 'button';
+        var isActive = (n === 1);
+        btn.style.cssText = 'padding:6px 22px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:2px solid ' + (isActive ? '#0b3c75' : '#d1d5db') + '; background:' + (isActive ? '#0b3c75' : '#fff') + '; color:' + (isActive ? '#fff' : '#374151') + ';';
+        btn.textContent = 'Hoja ' + n;
+        btn.onclick = function () { switchVerSheet(n); };
+        tabsDiv.appendChild(btn);
+      })(j);
+    }
+  }
+
+  renderSheetGrid(allSheetsVer[1] || {});
+
+  // ── Distance measurement ────────────────────────────────
+  var measureMode  = false;
+  var measureCell1 = null;
+
+  window.toggleMeasure = function () {
+    measureMode  = !measureMode;
+    measureCell1 = null;
+    var btn = document.getElementById('measureBtn');
+    btn.style.background  = measureMode ? 'rgba(234,179,8,0.85)' : 'rgba(255,255,255,0.18)';
+    btn.textContent       = measureMode ? '📏 Clic en 1ª posición…' : '📏 Medir distancia';
+    document.getElementById('measureResult').style.display = 'none';
+    document.querySelectorAll('#canvasWrapper [data-coord]').forEach(function (el) { el.style.outline = ''; });
+    document.getElementById('canvasWrapper').style.cursor = measureMode ? 'crosshair' : '';
+  };
+
+  document.getElementById('canvasWrapper').addEventListener('click', function (e) {
+    if (!measureMode) return;
+    var cell = e.target.closest('[data-coord]');
+    if (!cell) return;
+    var coord = cell.getAttribute('data-coord');
+    if (!measureCell1) {
+      document.querySelectorAll('#canvasWrapper [data-coord]').forEach(function (el) { el.style.outline = ''; });
+      measureCell1 = coord;
+      cell.style.outline = '3px solid #f59e0b';
+      cell.style.outlineOffset = '-2px';
+      document.getElementById('measureBtn').textContent = '📏 Clic en 2ª posición…';
+    } else {
+      cell.style.outline = '3px solid #10b981';
+      cell.style.outlineOffset = '-2px';
+      showMeasureResult(measureCell1, coord);
+      measureCell1 = null;
+      measureMode  = false;
+      var btn = document.getElementById('measureBtn');
+      btn.style.background  = 'rgba(255,255,255,0.18)';
+      btn.textContent       = '📏 Medir distancia';
+      document.getElementById('canvasWrapper').style.cursor = '';
+    }
+  });
+
+  function showMeasureResult(c1, c2) {
+    function parseCoord(c) {
+      var dash = c.lastIndexOf('-');
+      var rowNum = parseInt(c.substring(dash + 1)) - 1;
+      var colStr = c.substring(0, dash);
+      var colNum = 0;
+      for (var i = 0; i < colStr.length; i++) { colNum = colNum * 26 + (colStr.charCodeAt(i) - 64); }
+      return { col: colNum - 1, row: rowNum };
+    }
+    var p1 = parseCoord(c1), p2 = parseCoord(c2);
+    var dc = Math.abs(p2.col - p1.col), dr = Math.abs(p2.row - p1.row);
+    var manhattan = (dc + dr) * 0.6;
+    var euclidean = Math.sqrt(dc * dc + dr * dr) * 0.6;
+    document.getElementById('mCoord1').textContent    = c1;
+    document.getElementById('mCoord2').textContent    = c2;
+    document.getElementById('mDelta').textContent     = dc + ' col, ' + dr + ' fil  (' + (dc * 0.6).toFixed(1) + ' m × ' + (dr * 0.6).toFixed(1) + ' m)';
+    document.getElementById('mManhattan').textContent = (dc + dr) + ' palmetas = ' + manhattan.toFixed(2) + ' m';
+    document.getElementById('mEuclidean').textContent = Math.sqrt(dc * dc + dr * dr).toFixed(2) + ' palmetas = ' + euclidean.toFixed(2) + ' m';
+    var res = document.getElementById('measureResult');
+    res.style.display = 'block';
+    res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+</script>
+</body>
+</html>

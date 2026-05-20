@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">>
 <head th:replace="~{fragments/headers :: headers}"></head>
 <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134;
   background:
@@ -220,7 +221,7 @@
           </div>
 
           <div th:unless="${#lists.isEmpty(pendientes)}">
-            <button type="submit"
+            <button sec:authorize="hasAnyRole('ADMIN','USER')" type="submit"
                     style="padding:11px 28px; border-radius:8px; background:linear-gradient(90deg,#134e4a,#0d9488); color:#fff; font-weight:800; font-size:14px; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(13,148,136,0.25);">
               💾 Guardar Temperaturas — <span th:text="${horarioActivo}"></span>
             </button>
@@ -280,7 +281,7 @@
                   <input type="hidden" name="medicionId" th:value="${m.id}">
                   <input type="hidden" name="sitioId" th:value="${sitioIdSeleccionado}">
                   <input type="hidden" name="salaId" th:value="${salaIdSeleccionada}">
-                  <button type="submit" style="background:#fee2e2; color:#7f1d1d; border:1px solid #fca5a5; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">Eliminar</button>
+                  <button sec:authorize="hasAnyRole('ADMIN','USER')" type="submit" style="background:#fee2e2; color:#7f1d1d; border:1px solid #fca5a5; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:700; cursor:pointer;">Eliminar</button>
                 </form>
               </td>
             </tr>

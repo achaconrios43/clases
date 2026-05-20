@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
 <head th:replace="~{fragments/headers :: headers}"></head>
 <body class="min-h-screen flex flex-col" style="font-family:'Barlow',sans-serif; color:#172134; background: radial-gradient(circle at 8% 12%, rgba(11,60,117,0.08), transparent 32%), radial-gradient(circle at 94% 5%, rgba(0,164,200,0.12), transparent 28%), linear-gradient(180deg,#edf3f9 0%,#e6edf5 55%,#dfe9f3 100%);">
 <nav th:replace="~{fragments/navdar :: nav}"></nav>
@@ -12,13 +12,19 @@
     <span style="color:#ffffff; font-weight:800; font-size:15px;">🗄️ Editor de Plano Técnico</span>
   </div>
   <div style="display:flex; gap:10px;">
-    <button onclick="savePlano()" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">💾 Guardar Plano</button>
+    <button sec:authorize="hasAnyRole('ADMIN','USER')" onclick="savePlano()" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">💾 Guardar Plano</button>
     <button onclick="clearGrid()" style="background:rgba(220,38,38,0.35); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">🗑️ Limpiar</button>
   </div>
 </div>
 
 <!-- Alerts -->
-<div th:if="${success}" style="background:#dcfce7; border-bottom:1px solid #86efac; color:#166534; padding:10px 32px; font-size:13px; font-weight:600;" th:text="${success}"></div>
+<div th:if="${success}" style="background:#dcfce7; border-bottom:1px solid #86efac; color:#166534; padding:10px 32px; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+  <span th:text="${success}"></span>
+  <div style="display:flex; gap:8px; flex-shrink:0;">
+    <a th:if="${savedPlanoId}" th:href="@{/plano-sala/ver/{id}(id=${savedPlanoId})}" style="background:#16a34a; color:#fff; padding:5px 14px; border-radius:6px; font-size:12px; font-weight:700; text-decoration:none;">👁 Ver plano</a>
+    <a th:if="${savedPlanoId}" th:href="@{/plano-sala/plantillas}" style="background:rgba(22,163,74,0.15); color:#166534; padding:5px 14px; border-radius:6px; font-size:12px; font-weight:700; text-decoration:none; border:1px solid #86efac;">📋 Planos guardados</a>
+  </div>
+</div>
 <div th:if="${error}"   style="background:#fee2e2; border-bottom:1px solid #fca5a5; color:#991b1b; padding:10px 32px; font-size:13px; font-weight:600;" th:text="${error}"></div>
 
 <!-- ===== EDITOR ROW ===== -->
@@ -73,6 +79,14 @@
       <div style="margin-top:8px; background:#eff6ff; border-radius:6px; padding:6px 10px; font-size:12px; color:#1d4ed8; font-weight:700; text-align:center;">
         Palmetas 60×60 cm: <span id="gridSizeLabel">18 × 15</span>
       </div>
+      <div id="sheetSuggestion" style="display:none; margin-top:7px; border-radius:6px; padding:7px 10px; font-size:11px; font-weight:600; line-height:1.5;"></div>
+    </div>
+
+    <!-- Hojas del Plano -->
+    <div style="background:#f8fafc; border-radius:10px; padding:12px; border:1px solid #e2e8f0;">
+      <div style="font-size:10px; font-weight:700; color:#0b3c75; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;">🗂️ Hojas del Plano</div>
+      <div id="sheetTabsContainer" style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px;"></div>
+      <button type="button" id="addSheetBtn" onclick="addSheet()" style="width:100%; padding:5px 8px; border:2px dashed #cbd5e1; background:transparent; border-radius:6px; font-size:11px; color:#6b7280; cursor:pointer; font-weight:600; display:none;">+ Agregar hoja</button>
     </div>
 
     <!-- Tools / Legend -->
@@ -124,49 +138,6 @@
 
 </div><!-- /editor row -->
 
-<!-- ===== PLANOS GUARDADOS ===== -->
-<div style="padding:24px 32px; max-width:1400px; margin:0 auto; width:100%; box-sizing:border-box;">
-  <div style="background:#fff; border-radius:14px; border:1px solid rgba(11,60,117,0.08); box-shadow:0 2px 8px rgba(0,0,0,0.06); overflow:hidden;">
-    <div style="padding:14px 24px; border-bottom:1px solid #e2e8f0;">
-      <span style="font-size:14px; font-weight:700; color:#0b3c75;">📋 Planos Guardados</span>
-    </div>
-    <table style="width:100%; border-collapse:collapse; font-size:13px;">
-      <thead style="background:linear-gradient(90deg,#1e3a5f,#0b3c75); color:#fff;">
-        <tr>
-          <th style="padding:10px 16px; text-align:left; font-weight:600;">Sitio</th>
-          <th style="padding:10px 16px; text-align:left; font-weight:600;">Sala</th>
-          <th style="padding:10px 16px; text-align:center; font-weight:600;">Cols</th>
-          <th style="padding:10px 16px; text-align:center; font-weight:600;">Filas</th>
-          <th style="padding:10px 16px; text-align:center; font-weight:600;">Dimensiones (m)</th>
-          <th style="padding:10px 16px; text-align:center; font-weight:600;">Área (m²)</th>
-          <th style="padding:10px 16px; text-align:center; font-weight:600;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="p : ${planos}" style="border-bottom:1px solid #f0f4f8;">
-          <td style="padding:10px 16px;" th:text="${p.sala?.sitio?.nombre}">-</td>
-          <td style="padding:10px 16px; font-weight:600;" th:text="${p.sala?.nombre}">-</td>
-          <td style="padding:10px 16px; text-align:center; font-family:monospace;" th:text="${p.cantidadColumnas}">-</td>
-          <td style="padding:10px 16px; text-align:center; font-family:monospace;" th:text="${p.cantidadFilas}">-</td>
-          <td style="padding:10px 16px; text-align:center; font-size:12px; color:#374151; font-family:monospace;"
-              th:text="${#numbers.formatDecimal(p.cantidadColumnas * 0.6, 1, 1)} + ' × ' + ${#numbers.formatDecimal(p.cantidadFilas * 0.6, 1, 1)}">-</td>
-          <td style="padding:10px 16px; text-align:center; font-weight:700; color:#1d4ed8;"
-              th:text="${#numbers.formatDecimal(p.cantidadColumnas * 0.6 * p.cantidadFilas * 0.6, 1, 2)} + ' m²'">-</td>
-          <td style="padding:10px 16px; text-align:center;">
-            <div style="display:flex; justify-content:center; gap:8px;">
-              <a th:href="@{/plano-sala/{id}(id=${p.id})}" style="background:#1d4ed8; color:#fff; padding:4px 12px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:600;">🗺️ Ver</a>
-              <a th:href="@{/plano-sala/eliminar/{id}(id=${p.id})}" onclick="return confirm('¿Eliminar este plano?')" style="background:#dc2626; color:#fff; padding:4px 12px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:600;">🗑️</a>
-            </div>
-          </td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(planos)}">
-          <td colspan="7" style="padding:32px; text-align:center; color:#9ca3af;">No hay planos guardados aún. Seleccione una sala y dibuje el plano arriba.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <!-- Hidden save form -->
@@ -176,7 +147,18 @@
   <input type="hidden" name="cantidadColumnas" id="formCols">
   <input type="hidden" name="cantidadFilas"    id="formFilas">
   <input type="hidden" name="descripcion"      id="formDesc" value="">
+  <input type="hidden" name="layoutJson"       id="formLayoutJson">
 </form>
+
+<!-- Edit-mode pre-load data (only present when /editar/{id} is called) -->
+<script th:if="${planoEditar != null}" th:inline="javascript">
+  window.__planoEditar = {
+    salaId:  /*[[${planoEditar.sala.id}]]*/ null,
+    cols:    /*[[${planoEditar.cantidadColumnas}]]*/ 0,
+    rows:    /*[[${planoEditar.cantidadFilas}]]*/ 0,
+    layout:  /*[[${planoEditar.layoutJson != null ? planoEditar.layoutJson : '{}'}]]*/ '{}'
+  };
+</script>
 
 <!-- =============================================
      EDITOR DE PLANO — Piso de Palmetas 60×60 cm
@@ -189,11 +171,26 @@ const ITEM_TYPES = [
   { id: 'libre',           label: 'Posición libre',           bg: '#dcfce7',     border: '2px solid #22c55e',    br: '3px', text: '',   tc: '',        scale: false },
   { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
   { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'fms200',          label: 'Sistema FM200',            bg: '#6b0202',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
   { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
-  { id: 'fm200',           label: 'Sistema FM200',            bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'FM', tc: '#fff',    scale: false },
+  { id: 'eeaa',            label: 'Sistema Climatización',     bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'FM', tc: '#fff',    scale: false },
   { id: 'borrar',          label: 'Goma de borrar (Quitar)',  bg: 'transparent', border: '2px dashed #d1d5db',   br: '3px', text: '✕',  tc: '#9ca3af', scale: false },
   { id: 'editar',          label: 'Moldear (Ajustar tamaño)', bg: '#e0e7ff',     border: '2px dashed #6366f1',   br: '3px', text: '✥',  tc: '#6366f1', scale: false }
 ];
+
+// ── Overlay / Infrastructure types (render on top of base tiles) ────
+const OVERLAY_TYPES = [
+  { id: 'muro',              label: 'Muro / Pared',           bg: 'repeating-linear-gradient(45deg,#374151 0,#374151 5px,#1f2937 5px,#1f2937 10px)', border: '2px solid #111827', br: '0',   text: '',   tc: '#fff'    },
+  { id: 'puerta',            label: 'Puerta abierta',          bg: 'rgba(248,250,252,0.93)',  border: '3px solid #0f172a', br: '0 0 50% 0', text: '↗', tc: '#0f172a' },
+  { id: 'escalerilla',       label: 'Escalerilla de cable',    bg: 'repeating-linear-gradient(0deg,#78350f 0,#78350f 3px,rgba(254,215,170,0.28) 3px,rgba(254,215,170,0.28) 12px)', border: '2px solid #92400e', br: '2px', text: '', tc: '#fff' },
+  { id: 'bajo_piso_azul',    label: 'Bajo Piso — Azul',        bg: 'rgba(59,130,246,0.42)',   border: '1px solid #2563eb',  br: '2px', text: '▣',  tc: '#eff6ff' },
+  { id: 'bajo_piso_rojo',    label: 'Bajo Piso — Rojo',        bg: 'rgba(239,68,68,0.42)',    border: '1px solid #dc2626',  br: '2px', text: '▣',  tc: '#fef2f2' },
+  { id: 'bajo_piso_verde',   label: 'Bajo Piso — Verde',       bg: 'rgba(34,197,94,0.42)',    border: '1px solid #16a34a',  br: '2px', text: '▣',  tc: '#f0fdf4' },
+  { id: 'bajo_piso_naranja', label: 'Bajo Piso — Naranja',     bg: 'rgba(249,115,22,0.42)',   border: '1px solid #ea580c',  br: '2px', text: '▣',  tc: '#fff7ed' },
+  { id: 'borrar_capa',       label: 'Borrar sólo capa infra.', bg: 'transparent',             border: '2px dashed #f59e0b', br: '3px', text: '○',  tc: '#d97706' },
+];
+const OVERLAY_IDS = new Set(['muro','puerta','escalerilla','bajo_piso_azul','bajo_piso_rojo','bajo_piso_verde','bajo_piso_naranja']);
 
 // ── State ────────────────────────────────────────
 let gridData      = {};
@@ -205,12 +202,52 @@ let southMeters   = 10.8;
 let eastMeters    = 9.0;
 let westMeters    = 9.0;
 let currentSalaId = null;
+// multi-sheet
+let currentSheet  = 1;
+let allSheets     = { 1: {} };
+let sheetCount    = 1;
 
 // ── Boot ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
   buildSitioSelect();
   buildToolsList();
   updateGridSizeLabel();
+  buildSheetTabs();
+
+  // Pre-load when coming from /editar/{id}
+  if (window.__planoEditar) {
+    var pe = window.__planoEditar;
+    var mN = (pe.cols * 0.6).toFixed(1);
+    var mE = (pe.rows * 0.6).toFixed(1);
+    document.getElementById('northMeters').value = mN;
+    document.getElementById('southMeters').value = mN;
+    document.getElementById('eastMeters').value  = mE;
+    document.getElementById('westMeters').value  = mE;
+    northMeters = parseFloat(mN);
+    southMeters = parseFloat(mN);
+    eastMeters  = parseFloat(mE);
+    westMeters  = parseFloat(mE);
+
+    var salaOpt = document.querySelector('#salaSelect option[value="' + pe.salaId + '"]');
+    if (salaOpt) {
+      document.getElementById('sitioSelect').value = salaOpt.getAttribute('data-sitio-id');
+      onSitioChange();
+      document.getElementById('salaSelect').value = pe.salaId;
+    }
+    currentSalaId = String(pe.salaId);
+
+    // Parse saved layout (v2 multi-sheet or legacy single-sheet)
+    try {
+      var saved = typeof pe.layout === 'string' ? JSON.parse(pe.layout) : pe.layout;
+      _loadSheetsFromJson(saved);
+    } catch (e) { allSheets = {1:{}}; sheetCount = 1; }
+    currentSheet = 1;
+    gridData = allSheets[1];
+    try { localStorage.setItem('planoAll_' + currentSalaId, JSON.stringify(_sheetsPayload())); } catch(e) {}
+    updateGridSizeLabel();
+    buildSheetTabs();
+    renderGrid();
+  }
 });
 
 // ── Cascade: Sitio → Sala ────────────────────────
@@ -247,12 +284,25 @@ function onSalaChange () {
   currentSalaId = salaId || null;
   selectedCoord = null;
   if (salaId) {
-    try { gridData = JSON.parse(localStorage.getItem('planoGrid_' + salaId) || '{}'); }
-    catch (e) { gridData = {}; }
+    try {
+      var raw = localStorage.getItem('planoAll_' + salaId);
+      if (raw) {
+        _loadSheetsFromJson(JSON.parse(raw));
+      } else {
+        // legacy key
+        var leg = localStorage.getItem('planoGrid_' + salaId);
+        allSheets = {1: leg ? JSON.parse(leg) : {}};
+        sheetCount = 1;
+      }
+    } catch (e) { allSheets = {1:{}}; sheetCount = 1; }
   } else {
-    gridData = {};
+    allSheets = {1:{}}; sheetCount = 1;
   }
+  currentSheet = 1;
+  gridData = allSheets[1];
   updateMoldPanel();
+  updateGridSizeLabel();
+  buildSheetTabs();
   renderGrid();
 }
 
@@ -270,32 +320,56 @@ function getCols () { return Math.ceil(Math.max(northMeters, southMeters) / TILE
 function getRows () { return Math.ceil(Math.max(eastMeters,  westMeters)  / TILE_SIZE); }
 
 function updateGridSizeLabel () {
-  document.getElementById('gridSizeLabel').textContent = getCols() + ' × ' + getRows();
+  var cols = getCols(), rows = getRows();
+  document.getElementById('gridSizeLabel').textContent = cols + ' × ' + rows;
+  // Sheet suggestion
+  var box = document.getElementById('sheetSuggestion');
+  var addBtn = document.getElementById('addSheetBtn');
+  var totalTiles = cols * rows;
+  if (totalTiles > 800 || cols > 30 || rows > 25) {
+    box.style.display = 'block';
+    if ((totalTiles > 1400 || cols > 45 || rows > 38) && sheetCount < 3) {
+      box.style.background = '#fee2e2'; box.style.border = '1px solid #fca5a5'; box.style.color = '#991b1b';
+      box.innerHTML = '⚠️ Plano muy grande (' + cols + '×' + rows + '). Se recomienda usar <strong>2 o más hojas</strong> para mejor manejo.';
+    } else if (sheetCount < 2) {
+      box.style.background = '#fef3c7'; box.style.border = '1px solid #fcd34d'; box.style.color = '#92400e';
+      box.innerHTML = '💡 Plano extenso (' + cols + '×' + rows + '). Considera agregar una <strong>2ª hoja</strong>.';
+    } else {
+      box.style.display = 'none';
+    }
+    if (addBtn) addBtn.style.display = (sheetCount < 3) ? 'block' : 'none';
+  } else {
+    box.style.display = 'none';
+    if (addBtn) addBtn.style.display = (sheetCount < 3) ? 'block' : 'none';
+  }
 }
 
 // ── Tools List ───────────────────────────────────
 function buildToolsList () {
   var container = document.getElementById('toolsList');
   container.innerHTML = '';
-  ITEM_TYPES.forEach(function (tool) {
+  function makeBtn(tool) {
     var btn = document.createElement('button');
     btn.id   = 'toolBtn_' + tool.id;
     btn.type = 'button';
     btn.onclick = function () { selectTool(tool.id); };
     btn.style.cssText = 'display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:8px; border:2px solid transparent; cursor:pointer; background:transparent; width:100%; text-align:left;';
-
     var swatch = document.createElement('div');
-    swatch.style.cssText = 'width:26px; height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; background:' + tool.bg + '; border:' + tool.border + '; border-radius:' + (tool.scale ? '50%' : tool.br) + '; color:' + tool.tc + '; ' + (tool.scale ? 'transform:scale(0.85);' : '');
+    swatch.style.cssText = 'width:26px; height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; background:' + tool.bg + '; border:' + tool.border + '; border-radius:' + tool.br + '; color:' + tool.tc + '; ' + (tool.scale ? 'transform:scale(0.85);' : '');
     swatch.textContent = tool.text;
-
     var lbl = document.createElement('span');
     lbl.style.cssText = 'font-size:12px; font-weight:500; color:#374151;';
     lbl.textContent = tool.label;
-
     btn.appendChild(swatch);
     btn.appendChild(lbl);
-    container.appendChild(btn);
-  });
+    return btn;
+  }
+  ITEM_TYPES.forEach(function (tool) { container.appendChild(makeBtn(tool)); });
+  var sep = document.createElement('div');
+  sep.style.cssText = 'font-size:9px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em; margin:8px 2px 4px; border-top:1px solid #f1f5f9; padding-top:8px; text-align:center;';
+  sep.textContent = '── Capas de Infraestructura ──';
+  container.appendChild(sep);
+  OVERLAY_TYPES.forEach(function (tool) { container.appendChild(makeBtn(tool)); });
   highlightActiveTool();
 }
 
@@ -306,7 +380,7 @@ function selectTool (toolId) {
 }
 
 function highlightActiveTool () {
-  ITEM_TYPES.forEach(function (t) {
+  ITEM_TYPES.concat(OVERLAY_TYPES).forEach(function (t) {
     var btn = document.getElementById('toolBtn_' + t.id);
     if (!btn) return;
     btn.style.borderColor = t.id === activeTool ? '#3b82f6' : 'transparent';
@@ -403,14 +477,28 @@ function renderGrid () {
 }
 
 function cellInnerHTML (cd, isSel) {
-  var tool = null;
-  for (var i = 0; i < ITEM_TYPES.length; i++) { if (ITEM_TYPES[i].id === cd.type) { tool = ITEM_TYPES[i]; break; } }
-  if (!tool) return '';
-  var top    = cd.norte !== undefined ? cd.norte : 5;
-  var bottom = cd.sur   !== undefined ? cd.sur   : 5;
-  var left   = cd.oeste !== undefined ? cd.oeste : 5;
-  var right  = cd.este  !== undefined ? cd.este  : 5;
-  return '<div style="position:absolute; top:' + top + '%; bottom:' + bottom + '%; left:' + left + '%; right:' + right + '%; background:' + tool.bg + '; border:' + tool.border + '; border-radius:' + (tool.scale ? '50%' : tool.br) + '; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; color:' + tool.tc + '; z-index:' + (isSel ? 50 : 10) + '; ' + (tool.scale ? 'transform:scale(0.75);' : '') + ' pointer-events:none;">' + tool.text + '</div>';
+  var result = '';
+  // Base layer
+  if (cd.type) {
+    var tool = null;
+    for (var i = 0; i < ITEM_TYPES.length; i++) { if (ITEM_TYPES[i].id === cd.type) { tool = ITEM_TYPES[i]; break; } }
+    if (tool) {
+      var top    = cd.norte !== undefined ? cd.norte : 5;
+      var bottom = cd.sur   !== undefined ? cd.sur   : 5;
+      var left   = cd.oeste !== undefined ? cd.oeste : 5;
+      var right  = cd.este  !== undefined ? cd.este  : 5;
+      result += '<div style="position:absolute;top:' + top + '%;bottom:' + bottom + '%;left:' + left + '%;right:' + right + '%;background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + (tool.scale ? '50%' : tool.br) + ';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:' + tool.tc + ';z-index:' + (isSel ? 50 : 10) + ';' + (tool.scale ? 'transform:scale(0.75);' : '') + 'pointer-events:none;">' + tool.text + '</div>';
+    }
+  }
+  // Overlay layer — renders on top of base (muros, puertas, escalerillas, áreas, bajo piso)
+  if (cd.overlay) {
+    var ovl = null;
+    for (var j = 0; j < OVERLAY_TYPES.length; j++) { if (OVERLAY_TYPES[j].id === cd.overlay) { ovl = OVERLAY_TYPES[j]; break; } }
+    if (ovl) {
+      result += '<div style="position:absolute;top:0;bottom:0;left:0;right:0;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + ovl.tc + ';z-index:20;pointer-events:none;">' + ovl.text + '</div>';
+    }
+  }
+  return result;
 }
 
 // ── Event Delegation ─────────────────────────────
@@ -434,7 +522,7 @@ function handleTile (coord, isClick) {
   if (activeTool === 'editar') {
     if (isClick) {
       var prev = selectedCoord;
-      selectedCoord = (gridData[coord] && selectedCoord !== coord) ? coord : null;
+      selectedCoord = (gridData[coord] && gridData[coord].type && selectedCoord !== coord) ? coord : null;
       updateMoldPanel();
       refreshCell(coord);
       if (prev && prev !== coord) refreshCell(prev);
@@ -448,8 +536,21 @@ function handleTile (coord, isClick) {
       refreshCell(coord);
       persist();
     }
+  } else if (activeTool === 'borrar_capa') {
+    if (gridData[coord] && gridData[coord].overlay) {
+      delete gridData[coord].overlay;
+      if (!gridData[coord].type) delete gridData[coord];
+      refreshCell(coord);
+      persist();
+    }
+  } else if (OVERLAY_IDS.has(activeTool)) {
+    if (!gridData[coord]) gridData[coord] = { norte: 5, sur: 5, oeste: 5, este: 5 };
+    gridData[coord].overlay = activeTool;
+    refreshCell(coord);
+    persist();
   } else {
     var existing = gridData[coord];
+    var ovl = existing ? existing.overlay : undefined;
     gridData[coord] = {
       type:  activeTool,
       norte: existing ? existing.norte : 5,
@@ -457,6 +558,7 @@ function handleTile (coord, isClick) {
       oeste: existing ? existing.oeste : 5,
       este:  existing ? existing.este  : 5
     };
+    if (ovl) gridData[coord].overlay = ovl;  // preserve existing overlay
     refreshCell(coord);
     persist();
   }
@@ -510,25 +612,117 @@ function onMoldChange (field, value) {
 // ── localStorage ─────────────────────────────────
 function persist () {
   if (!currentSalaId) return;
-  try { localStorage.setItem('planoGrid_' + currentSalaId, JSON.stringify(gridData)); } catch (e) {}
+  allSheets[currentSheet] = gridData;
+  try { localStorage.setItem('planoAll_' + currentSalaId, JSON.stringify(_sheetsPayload())); } catch (e) {}
+}
+
+function _sheetsPayload () {
+  allSheets[currentSheet] = gridData;
+  return { _v: 2, sheetCount: sheetCount, sheets: allSheets };
+}
+
+function _loadSheetsFromJson (parsed) {
+  if (parsed && parsed._v === 2 && parsed.sheets) {
+    sheetCount = parsed.sheetCount || 1;
+    allSheets = {};
+    for (var i = 1; i <= sheetCount; i++) { allSheets[i] = parsed.sheets[i] || parsed.sheets[String(i)] || {}; }
+  } else {
+    allSheets = { 1: (parsed && typeof parsed === 'object' ? parsed : {}) };
+    sheetCount = 1;
+  }
 }
 
 // ── Save to Backend ───────────────────────────────
 function savePlano () {
   if (!currentSalaId) { alert('Seleccione una sala primero.'); return; }
-  document.getElementById('formSalaId').value = currentSalaId;
-  document.getElementById('formCols').value   = getCols();
-  document.getElementById('formFilas').value  = getRows();
+  document.getElementById('formSalaId').value     = currentSalaId;
+  document.getElementById('formCols').value       = getCols();
+  document.getElementById('formFilas').value      = getRows();
+  document.getElementById('formLayoutJson').value = JSON.stringify(_sheetsPayload());
   document.getElementById('saveForm').submit();
 }
 
 // ── Clear ─────────────────────────────────────────
 function clearGrid () {
-  if (!confirm('¿Limpiar todo el plano?')) return;
+  if (!confirm('¿Limpiar la Hoja ' + currentSheet + '?')) return;
   gridData = {};
+  allSheets[currentSheet] = {};
   selectedCoord = null;
   updateMoldPanel();
   persist();
+  renderGrid();
+}
+
+// ── Sheet management ─────────────────────────────
+function buildSheetTabs () {
+  var container = document.getElementById('sheetTabsContainer');
+  if (!container) return;
+  var addBtn = document.getElementById('addSheetBtn');
+  container.innerHTML = '';
+  for (var i = 1; i <= sheetCount; i++) {
+    (function (n) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      var isActive = (n === currentSheet);
+      btn.style.cssText = 'padding:4px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; border:2px solid ' + (isActive ? '#0b3c75' : '#d1d5db') + '; background:' + (isActive ? '#0b3c75' : '#fff') + '; color:' + (isActive ? '#fff' : '#374151') + ';';
+      btn.textContent = 'Hoja ' + n;
+      btn.onclick = function () { switchSheet(n); };
+      container.appendChild(btn);
+      if (n > 1) {
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.title = 'Eliminar Hoja ' + n;
+        del.style.cssText = 'padding:2px 6px; border-radius:5px; font-size:11px; font-weight:700; cursor:pointer; border:1px solid #fca5a5; background:#fee2e2; color:#dc2626; margin-left:-2px;';
+        del.textContent = '×';
+        del.onclick = function () { removeSheet(n); };
+        container.appendChild(del);
+      }
+    })(i);
+  }
+  if (addBtn) addBtn.style.display = (sheetCount < 3) ? 'block' : 'none';
+}
+
+function switchSheet (n) {
+  if (n === currentSheet) return;
+  allSheets[currentSheet] = gridData;  // save current
+  persist();
+  currentSheet = n;
+  gridData = allSheets[n] || {};
+  allSheets[n] = gridData;
+  selectedCoord = null;
+  updateMoldPanel();
+  buildSheetTabs();
+  renderGrid();
+}
+
+function addSheet () {
+  if (sheetCount >= 3) { alert('Máximo 3 hojas por plano.'); return; }
+  sheetCount++;
+  allSheets[sheetCount] = {};
+  persist();
+  buildSheetTabs();
+  updateGridSizeLabel();
+  switchSheet(sheetCount);
+}
+
+function removeSheet (n) {
+  if (n === 1) { alert('No se puede eliminar la Hoja 1.'); return; }
+  if (!confirm('¿Eliminar Hoja ' + n + '? Se perderán sus datos.')) return;
+  delete allSheets[n];
+  // Re-number sheets above n
+  for (var i = n + 1; i <= sheetCount; i++) {
+    allSheets[i - 1] = allSheets[i];
+    delete allSheets[i];
+  }
+  sheetCount--;
+  if (currentSheet >= n) currentSheet = Math.max(1, currentSheet - 1);
+  gridData = allSheets[currentSheet] || {};
+  allSheets[currentSheet] = gridData;
+  selectedCoord = null;
+  persist();
+  updateMoldPanel();
+  buildSheetTabs();
+  updateGridSizeLabel();
   renderGrid();
 }
 </script>

@@ -1,7 +1,6 @@
 package com.example.dcim.controllers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -51,10 +50,8 @@ public class PlanoSalaController {
     }
 
     @GetMapping("/layout")
-    public String layout(Model model) {
-        model.addAttribute("sitios", sitioRepository.findByActivoTrueOrderByNombreAsc());
-        model.addAttribute("salas", salaRepository.findAll());
-        return "layout-sala";
+    public String layout() {
+        return "redirect:/plano-sala";
     }
 
     /**
@@ -109,6 +106,7 @@ public class PlanoSalaController {
             @RequestParam int cantidadColumnas,
             @RequestParam int cantidadFilas,
             @RequestParam(required = false) String descripcion,
+            @RequestParam(required = false) String layoutJson,
             RedirectAttributes ra) {
 
         if (cantidadColumnas < 1 || cantidadColumnas > 100) {
@@ -126,16 +124,43 @@ public class PlanoSalaController {
             return "redirect:/plano-sala";
         }
 
-        PlanoSala plano = new PlanoSala();
+        // Upsert: actualiza el plano existente de esa sala o crea uno nuevo
+        PlanoSala plano = planoSalaRepository.findFirstBySalaId(salaId).orElse(new PlanoSala());
         plano.setSala(sala);
         plano.setCantidadColumnas(cantidadColumnas);
         plano.setCantidadFilas(cantidadFilas);
         plano.setDescripcion(descripcion);
+        if (layoutJson != null && !layoutJson.isBlank()) {
+            plano.setLayoutJson(layoutJson);
+        }
         planoSalaRepository.save(plano);
 
         ra.addFlashAttribute("success",
-                "Plano creado: " + sala.getNombre() + " - " + cantidadColumnas + " col x " + cantidadFilas + " fil");
+                "Plano guardado: " + sala.getNombre() + " — " + cantidadColumnas + "×" + cantidadFilas);
+        ra.addFlashAttribute("savedPlanoId", plano.getId());
         return "redirect:/plano-sala";
+    }
+
+    @GetMapping("/ver/{id}")
+    public String verPlanoCanvas(@PathVariable Long id, Model model) {
+        PlanoSala plano = planoSalaRepository.findById(id).orElse(null);
+        if (plano == null) {
+            return "redirect:/plano-sala";
+        }
+        model.addAttribute("plano", plano);
+        return "plano-sala-ver";
+    }
+
+    @GetMapping("/editar/{id}")
+    public String editarPlano(@PathVariable Long id, Model model) {
+        PlanoSala plano = planoSalaRepository.findById(id).orElse(null);
+        if (plano == null) {
+            return "redirect:/plano-sala";
+        }
+        model.addAttribute("planos", planoSalaRepository.findAllByOrderByFechaCreacionDesc());
+        model.addAttribute("salas", salaRepository.findAll());
+        model.addAttribute("planoEditar", plano);
+        return "plano-sala";
     }
 
     @GetMapping("/eliminar/{id}")
@@ -143,7 +168,7 @@ public class PlanoSalaController {
         planoSalaElementoRepository.deleteByPlanoSalaId(id);
         planoSalaRepository.deleteById(id);
         ra.addFlashAttribute("success", "Plano eliminado");
-        return "redirect:/plano-sala";
+        return "redirect:/plano-sala/plantillas";
     }
 
     @PostMapping("/{id}/elementos")
@@ -289,43 +314,16 @@ public class PlanoSalaController {
     }
 
     @GetMapping("/{id}")
-    public String verPlano(@PathVariable Long id, Model model) {
-        PlanoSala plano = planoSalaRepository.findById(id).orElse(null);
-        if (plano == null) {
-            return "redirect:/plano-sala";
-        }
-
-        List<String> columnLabels = new ArrayList<>();
-        for (int i = 0; i < plano.getCantidadColumnas(); i++) {
-            columnLabels.add(columnLabel(i));
-        }
-
-        List<Integer> rowNumbers = new ArrayList<>();
-        for (int r = plano.getCantidadFilas(); r >= 1; r--) {
-            rowNumbers.add(r);
-        }
-
-        List<Integer> rowNumbersAsc = new ArrayList<>();
-        for (int r = 1; r <= plano.getCantidadFilas(); r++) {
-            rowNumbersAsc.add(r);
-        }
-
-        double areaTotalM2 = plano.getCantidadColumnas() * 0.60 * plano.getCantidadFilas() * 0.60;
-
-        model.addAttribute("plano", plano);
-        model.addAttribute("elementos", planoSalaElementoRepository.findByPlanoSalaIdOrderByIdAsc(id));
-        model.addAttribute("columnLabels", columnLabels);
-        model.addAttribute("rowNumbers", rowNumbers);
-        model.addAttribute("rowNumbersAsc", rowNumbersAsc);
-        model.addAttribute("areaTotalM2", String.format("%.2f", areaTotalM2));
-        model.addAttribute("tiposBloqueados", Arrays.asList("MURO", "PUERTA"));
-        return "plano-sala-view";
+    public String verPlano(@PathVariable Long id) {
+        return "redirect:/plano-sala/ver/" + id;
     }
 
     // ---- PLANTILLAS ----
     @GetMapping("/plantillas")
     public String listarPlantillas(Model model) {
         model.addAttribute("plantillas", planoSalaRepository.findByEsPlantillaTrueOrderByNombrePlantillaAsc());
+        model.addAttribute("planos", planoSalaRepository.findByEsPlantillaFalseOrderByFechaCreacionDesc());
+        model.addAttribute("sitios", sitioRepository.findByActivoTrueOrderByNombreAsc());
         model.addAttribute("salas", salaRepository.findAll());
         return "plano-sala-plantillas";
     }

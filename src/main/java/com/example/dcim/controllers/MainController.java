@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.dcim.dao.IUsuarioDao;
+import com.example.dcim.dao.SitioRepository;
 import com.example.dcim.entity.Usuario;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,9 @@ public class MainController {
 
     @Autowired
     private IUsuarioDao usuarioDao;
+
+    @Autowired
+    private SitioRepository sitioRepository;
 
     @GetMapping("/")
     public String root() {
@@ -48,6 +52,7 @@ public class MainController {
                 model.addAttribute("usuario", usuario);
             }
         }
+        model.addAttribute("sitios", sitioRepository.findByActivoTrueOrderByNombreAsc());
         return "dashboard";
     }
 

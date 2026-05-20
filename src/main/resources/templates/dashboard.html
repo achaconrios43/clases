@@ -1,6 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/headers :: headers}"></head>
+<html lang="es">
+<head th:replace="fragments/headers :: headers">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
 <body class="min-h-screen flex flex-col" style="
   font-family: 'Barlow', 'Inter', sans-serif;
   color: #172134;
@@ -62,8 +65,8 @@
 
 <nav th:replace="fragments/navdar :: nav"></nav>
 
-<main class="flex-1" style="padding:2rem 0 3rem;">
-<div style="max-width:min(3400px,92%); margin:0 auto; padding:0 1.5rem;">
+<main class="flex-1 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
   <!-- ── Alertas ── -->
   <div th:if="${error != null}"
@@ -80,6 +83,14 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
     </svg>
     <span><strong>¡Usuario creado!</strong> El nuevo técnico ha sido registrado en el sistema.</span>
+  </div>
+  <div th:if="${param.errorViewer}"
+       class="mb-5 px-4 py-3 rounded-xl border border-amber-300 bg-amber-50 text-amber-700 flex items-center gap-2 reveal">
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+    </svg>
+    <span><strong>Modo solo lectura.</strong> Tu cuenta VIEWER no puede guardar ni modificar datos.</span>
   </div>
 
   <!-- ── Hero Header ── -->
@@ -110,7 +121,7 @@
     <div class="section-line" style="background: linear-gradient(90deg,#00a4c8,transparent)"></div>
   </div>
 
-  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.25rem;" class="reveal">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 reveal">
 
     <!-- Data Center -->
     <div class="dcim-card" th:if="${usuario != null and usuario.rol != 'VIEWER'}">
@@ -129,8 +140,8 @@
             <span>📦 Inventario de Racks</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
-          <a href="/layout-vertical" class="module-link text-blue-700">
-            <span>🗄️ Layout Vertical de Racks</span>
+          <a href="/temperaturas/registro" class="module-link text-blue-700">
+            <span>🌡️ Monitoreo de Temperatura</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
           <a href="/plano-sala" class="module-link text-blue-700">
@@ -141,7 +152,6 @@
             <span>📐 Plantillas de Salas</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
-          
         </div>
       </div>
     </div>
@@ -192,30 +202,8 @@
             <span>➕ Registrar Gestión</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Salas (solo ADMIN) -->
-    <div class="dcim-card" th:if="${usuario != null and usuario.rol == 'ADMIN'}">
-      <div class="card-band" style="background: linear-gradient(90deg,#1e3a5f,#0b3c75)"></div>
-      <div class="p-5">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-               style="background:rgba(11,60,117,0.10)">🏢</div>
-          <div>
-            <h3 class="font-bold text-slate-800">Creación de Salas</h3>
-            <p class="text-xs text-slate-500">Crear y administrar salas por sitio</p>
-          </div>
-          <span class="ml-auto tag-pill bg-blue-100 text-blue-700">ADMIN</span>
-        </div>
-        <div class="space-y-1 mt-3">
-          <a href="/salas" class="module-link text-blue-700">
-            <span>🏢 Ver todas las salas</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a href="/salas" class="module-link text-blue-700">
-            <span>➕ Crear nueva sala</span>
+          <a th:href="@{/dashboard/cliente}" class="module-link text-violet-700">
+            <span>📊 Ver Estadísticas</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -230,7 +218,7 @@
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
                style="background:rgba(19,78,74,0.10)">🌡️</div>
           <div>
-            <h3 class="font-bold text-slate-800">Registro de Temperatura</h3>
+            <h3 class="font-bold text-slate-800">Sitios, Salas y Temperatura</h3>
             <p class="text-xs text-slate-500">Mediciones y reportes ambientales</p>
           </div>
           <span class="ml-auto tag-pill bg-emerald-100 text-emerald-700">nuevo</span>
@@ -241,7 +229,7 @@
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
           <a href="/temperaturas/registro" class="module-link text-teal-700">
-            <span>➕ Registro de Temperaturas</span>
+            <span>➕ Registrar Medición</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -268,43 +256,6 @@
           </a>
           <a th:href="@{/user/create}" class="module-link text-emerald-700">
             <span>➕ Crear Usuario</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Estadísticas (ADMIN + USER) -->
-    <div class="dcim-card" th:if="${usuario != null and usuario.rol != 'VIEWER'}">
-      <div class="card-band" style="background: linear-gradient(90deg,#b45309,#f59e0b)"></div>
-      <div class="p-5">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-               style="background:rgba(180,83,9,0.10)">📊</div>
-          <div>
-            <h3 class="font-bold text-slate-800">Estadísticas</h3>
-            <p class="text-xs text-slate-500">Reportes e indicadores del Data Center</p>
-          </div>
-        </div>
-        <div class="space-y-1 mt-3">
-          <a th:href="@{/dashboard/cliente/diario}" class="module-link text-amber-700">
-            <span>📅 Registros Diarios</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a th:href="@{/dashboard/cliente/mensual}" class="module-link text-amber-700">
-            <span>📆 Registros Mensuales</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a href="/temperaturas" class="module-link text-amber-700">
-            <span>🌡️ Temperatura Diaria / Mensual</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a th:href="@{/dashboard/cliente}" class="module-link text-amber-700">
-            <span>🎫 Gestión de Acceso</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a th:href="@{/inventario}" class="module-link text-amber-700">
-            <span>🗄️ Racks, Servidores y Equipos</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -370,7 +321,7 @@
     <div class="section-line" style="background: linear-gradient(90deg,#7c3aed,transparent)"></div>
   </div>
 
-  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:1.25rem;" class="reveal">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5 reveal">
 
     <!-- Accesos rápidos -->
     <div class="dcim-card">
@@ -403,25 +354,77 @@
         <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2">
           <span>📊</span> Indicadores del Sistema
         </h3>
-        <div class="space-y-2">
+
+        <!-- Selector de sitio -->
+        <div class="mb-4">
+          <label for="sitio-selector" class="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">Filtrar por sitio</label>
+          <select id="sitio-selector"
+                  class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition">
+            <option value="">— Seleccione un sitio —</option>
+            <option th:each="s : ${sitios}" th:value="${s.id}" th:text="${s.nombre}"></option>
+          </select>
+        </div>
+
+        <!-- Placeholder: sin sitio seleccionado -->
+        <div id="stats-placeholder" class="flex flex-col items-center justify-center py-6 text-slate-400 gap-2">
+          <svg class="w-10 h-10 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M9 17v-2m3 2v-4m3 4v-6M5 20h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/>
+          </svg>
+          <span class="text-sm">Seleccione un sitio para ver estadísticas</span>
+        </div>
+
+        <!-- Estadísticas (ocultas hasta seleccionar sitio) -->
+        <div id="stats-content" class="space-y-2 hidden">
           <div class="flex justify-between items-center p-3 rounded-lg"
                style="background:rgba(11,60,117,0.05); border:1px solid rgba(11,60,117,0.08)">
             <span class="text-sm text-slate-600 font-medium">🧑‍🔧 Técnicos registrados hoy</span>
-            <span class="font-bold text-slate-800 text-lg">--</span>
+            <span id="stat-tecnicos" class="font-bold text-slate-800 text-lg">--</span>
           </div>
           <div class="flex justify-between items-center p-3 rounded-lg"
                style="background:rgba(19,78,74,0.05); border:1px solid rgba(19,78,74,0.08)">
             <span class="text-sm text-slate-600 font-medium">🌡️ Temperatura promedio</span>
-            <span class="font-bold text-teal-700 text-lg">22°C</span>
+            <span id="stat-temp" class="font-bold text-teal-700 text-lg">--</span>
           </div>
           <div class="flex justify-between items-center p-3 rounded-lg"
                style="background:rgba(15,76,117,0.05); border:1px solid rgba(15,76,117,0.08)">
             <span class="text-sm text-slate-600 font-medium">🏢 Racks activos en inventario</span>
-            <span class="font-bold text-slate-800 text-lg">--</span>
+            <span id="stat-racks" class="font-bold text-slate-800 text-lg">--</span>
           </div>
         </div>
+
       </div>
     </div>
+
+    <script>
+      (function () {
+        const selector = document.getElementById('sitio-selector');
+        const placeholder = document.getElementById('stats-placeholder');
+        const content = document.getElementById('stats-content');
+
+        selector.addEventListener('change', function () {
+          const sitioId = this.value;
+          if (!sitioId) {
+            content.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            return;
+          }
+          fetch('/api/dashboard/stats?sitioId=' + encodeURIComponent(sitioId))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              document.getElementById('stat-tecnicos').textContent = data.tecnicosHoy;
+              document.getElementById('stat-temp').textContent = data.temperaturaPromedio;
+              document.getElementById('stat-racks').textContent = data.racksActivos;
+              placeholder.classList.add('hidden');
+              content.classList.remove('hidden');
+            })
+            .catch(function () {
+              placeholder.classList.remove('hidden');
+              content.classList.add('hidden');
+            });
+        });
+      })();
+    </script>
 
   </div><!-- /grid rápidos -->
 

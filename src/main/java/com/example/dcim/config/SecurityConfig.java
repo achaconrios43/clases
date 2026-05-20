@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -30,6 +32,9 @@ public class SecurityConfig {
 
     @Autowired
     private CustomAuthSuccessHandler customAuthSuccessHandler;
+
+    @Autowired
+    private ViewerReadOnlyFilter viewerReadOnlyFilter;
 
     /**
      * Configuración de seguridad para API REST (aplicaciones móviles)
@@ -75,24 +80,38 @@ public class SecurityConfig {
                 // Permitir acceso al health check de Actuator (para Koyeb)
                 .requestMatchers("/actuator/health/**", "/actuator/health").permitAll()
 
-                // TODAS LAS DEMÁS RUTAS: Requieren autenticación
-                // Dashboard de estadísticas: accesible por ADMIN, USER, VIEWER y CLIENTE
+                // Dashboard: accesible por ADMIN, USER, VIEWER y CLIENTE
                 .requestMatchers("/dashboard/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
 
-                // Módulos operativos: solo ADMIN y USER (VIEWER no tiene acceso)
+                // Gestión de usuarios: solo ADMIN y USER
                 .requestMatchers("/user/**").hasAnyRole("ADMIN", "USER")
+
+                // Salas: solo ADMIN
+                .requestMatchers("/salas", "/salas/**").hasRole("ADMIN")
+
+                // Módulos operativos — GET (solo lectura): accesible también por VIEWER
+                // El filtro ViewerReadOnlyFilter bloquea POST/DELETE/PUT para VIEWER
+                .requestMatchers(HttpMethod.GET, "/ingresoap/**", "/ingresoap").hasAnyRole("ADMIN", "USER", "VIEWER")
+                .requestMatchers(HttpMethod.GET, "/ingreso/**").hasAnyRole("ADMIN", "USER", "VIEWER")
+                .requestMatchers(HttpMethod.GET, "/gestion/**").hasAnyRole("ADMIN", "USER", "VIEWER")
+                .requestMatchers(HttpMethod.GET, "/inventario/**", "/inventario").hasAnyRole("ADMIN", "USER", "VIEWER")
+                .requestMatchers(HttpMethod.GET, "/temperaturas/**").hasAnyRole("ADMIN", "USER", "VIEWER")
+                .requestMatchers(HttpMethod.GET, "/plano-sala/**", "/plano-sala").hasAnyRole("ADMIN", "USER", "VIEWER")
+
+                // Módulos operativos — escritura (POST, PUT, DELETE): solo ADMIN y USER
                 .requestMatchers("/ingresoap/**", "/ingresoap").hasAnyRole("ADMIN", "USER")
                 .requestMatchers("/ingreso/**").hasAnyRole("ADMIN", "USER")
                 .requestMatchers("/gestion/**").hasAnyRole("ADMIN", "USER")
                 .requestMatchers("/inventario/**", "/inventario").hasAnyRole("ADMIN", "USER")
                 .requestMatchers("/temperaturas/**").hasAnyRole("ADMIN", "USER")
-                .requestMatchers("/plano-sala/plantillas", "/plano-sala/plantillas/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
                 .requestMatchers("/plano-sala/**", "/plano-sala").hasAnyRole("ADMIN", "USER")
-                .requestMatchers("/salas", "/salas/**").hasRole("ADMIN")
 
                 // Cualquier otra petición requiere autenticación
                 .anyRequest().authenticated()
                 )
+
+            // Registrar el filtro VIEWER antes del filtro de autenticación
+            .addFilterBefore(viewerReadOnlyFilter, UsernamePasswordAuthenticationFilter.class)
 
             // CsrfTokenRequestAttributeHandler: expone _csrf como atributo no-lazy en Thymeleaf (Spring Security 6).
             .csrf(csrf -> csrf

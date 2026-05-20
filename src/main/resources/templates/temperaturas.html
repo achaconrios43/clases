@@ -100,7 +100,7 @@
                        style="width:100%; padding:9px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; box-sizing:border-box;">
               </div>
             </div>
-            <button type="submit"
+            <button sec:authorize="hasAnyRole('ADMIN','USER')" type="submit"
                     style="padding:10px 18px; border-radius:8px; background:linear-gradient(90deg,#0d9488,#134e4a); color:#fff; font-weight:700; font-size:13px; border:none; cursor:pointer;">
               + Agregar Punto
             </button>
@@ -223,7 +223,7 @@
                               th:onsubmit="'return confirm(\'¿Eliminar punto ' + ${p.codigo} + '?\''  )">
                           <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                           <input type="hidden" name="salaId" th:value="${salaIdSeleccionada}">
-                          <button type="submit"
+                          <button sec:authorize="hasAnyRole('ADMIN','USER')" type="submit"
                                   style="font-size:11px; padding:5px 10px; border-radius:5px; background:#fff1f2; color:#be123c; font-weight:700; border:1px solid #fecdd3; cursor:pointer;">🗑️</button>
                         </form>
                       </div>
@@ -247,7 +247,7 @@
                                    style="padding:7px 10px; border:1.5px solid #d1d5db; border-radius:6px; font-size:12px; box-sizing:border-box;">
                           </div>
                           <div style="display:flex; gap:6px;">
-                            <button type="submit"
+                            <button sec:authorize="hasAnyRole('ADMIN','USER')" type="submit"
                                     style="flex:1; padding:7px; border-radius:6px; background:linear-gradient(90deg,#134e4a,#0d9488); color:#fff; font-weight:700; font-size:12px; border:none; cursor:pointer;">Guardar</button>
                             <button type="button" th:onclick="'toggleEditForm(' + ${p.id} + ')'"
                                     style="padding:7px 12px; border-radius:6px; background:#f1f5f9; color:#64748b; font-weight:700; font-size:12px; border:1px solid #e2e8f0; cursor:pointer;">Cancelar</button>
