@@ -83,6 +83,9 @@ public class SecurityConfig {
                 // Dashboard: accesible por ADMIN, USER, VIEWER y CLIENTE
                 .requestMatchers("/dashboard/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
 
+                // Estadísticas: módulo principal para CLIENTE (accesible también por ADMIN y VIEWER)
+                .requestMatchers("/estadisticas/**", "/estadisticas").hasAnyRole("ADMIN", "VIEWER", "CLIENTE")
+
                 // Gestión de usuarios: solo ADMIN y USER
                 .requestMatchers("/user/**").hasAnyRole("ADMIN", "USER")
 

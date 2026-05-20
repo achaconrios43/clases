@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:insert="~{fragments/headers :: headers}"></th:block>
+    <title>Estadísticas — DCIM</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stat-card { transition: transform .2s, box-shadow .2s; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.12); }
+        .tab-btn.active { background: #0b3c75; color: #fff; }
+        .tab-btn:not(.active) { background: #e6edf5; color: #0b3c75; }
+        .chart-container { position: relative; height: 260px; }
+        .table-row-hover:hover { background: #f0f6ff; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <!-- ══════════════════════ CABECERA ══════════════════════ -->
+    <nav id="dcim-nav" class="bg-dcim-dark shadow-lg sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-white font-extrabold text-xl tracking-wide">DCIM</span>
+                <span class="text-dcim-accent font-semibold text-sm hidden sm:block">Centro de Datos</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span th:if="${usuarioLogueado != null}"
+                      class="auth-pill bg-dcim-primary text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    <i class="fas fa-user mr-1"></i>
+                    <span th:text="${usuarioLogueado.nombre}">Usuario</span>
+                    &nbsp;·&nbsp;
+                    <span th:text="${usuarioLogueado.rol}">Rol</span>
+                </span>
+                <a href="/dashboard" class="text-gray-300 hover:text-white text-sm font-medium hidden sm:block">
+                    <i class="fas fa-th-large mr-1"></i>Dashboard
+                </a>
+                <form method="post" action="/logout" class="inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit"
+                            class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1 rounded">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Salir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ══════════════════════ CONTENIDO ══════════════════════ -->
+    <div class="max-w-screen-2xl mx-auto px-4 py-6">
+
+        <!-- Título -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-extrabold text-dcim-dark">
+                <i class="fas fa-chart-line text-dcim-accent mr-2"></i>Estadísticas
+            </h1>
+            <p class="text-gray-500 mt-1 text-sm">
+                Resumen operativo de ingresos técnicos, gestión de accesos y temperatura de salas.
+            </p>
+        </div>
+
+        <!-- ══ SELECTOR DE SITIO + MODO ══ -->
+        <div class="bg-white rounded-xl shadow p-5 mb-6">
+            <form method="get" action="/estadisticas" id="frmSitio" class="flex flex-wrap gap-4 items-end">
+                <input type="hidden" name="modo" th:value="${modo}"/>
+                <div class="flex-1 min-w-[260px]">
+                    <label for="sitio" class="block text-sm font-semibold text-gray-700 mb-1">
+                        <i class="fas fa-map-marker-alt text-blue-600 mr-1"></i>Sitio de ingreso
+                    </label>
+                    <select id="sitio" name="sitio" onchange="this.form.submit()"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                        <option value="">Selecciona un sitio…</option>
+                        <option th:each="s : ${sitiosDisponibles}"
+                                th:value="${s.nombre}"
+                                th:text="${s.nombre}"
+                                th:selected="${sitioSeleccionado == s.nombre}"></option>
+                    </select>
+                </div>
+                <div th:if="${sitioSeleccionado != null and sitioSeleccionado != ''}">
+                    <span class="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span th:text="${sitioSeleccionado}">–</span>
+                    </span>
+                </div>
+            </form>
+        </div>
+
+        <!-- ══ MENSAJE SIN SITIO ══ -->
+        <div th:if="${sitioSeleccionado == null or sitioSeleccionado == ''}"
+             class="bg-white rounded-xl shadow p-16 text-center text-gray-400">
+            <i class="fas fa-chart-bar text-6xl mb-5 block text-gray-200"></i>
+            <p class="text-xl font-semibold mb-1">Selecciona un sitio</p>
+            <p class="text-sm">Las estadísticas se calcularán automáticamente al elegir el sitio.</p>
+        </div>
+
+        <!-- ══ PANEL PRINCIPAL (con sitio) ══ -->
+        <div th:if="${sitioSeleccionado != null and sitioSeleccionado != ''}">
+
+            <!-- ── TABS ── -->
+            <div class="flex gap-2 mb-6">
+                <a th:href="@{/estadisticas(sitio=${sitioSeleccionado},modo='diario')}"
+                   th:classappend="${modo == 'diario'} ? 'active' : ''"
+                   class="tab-btn font-bold px-6 py-2 rounded-full text-sm transition-all">
+                    <i class="fas fa-calendar-day mr-1"></i>Hoy
+                </a>
+                <a th:href="@{/estadisticas(sitio=${sitioSeleccionado},modo='mensual')}"
+                   th:classappend="${modo == 'mensual'} ? 'active' : ''"
+                   class="tab-btn font-bold px-6 py-2 rounded-full text-sm transition-all">
+                    <i class="fas fa-calendar-alt mr-1"></i>Este mes
+                </a>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════
+                  PESTAÑA DIARIA
+                 ══════════════════════════════════════════════════════ -->
+            <div th:if="${modo == 'diario'}">
+
+                <!-- Fecha actual -->
+                <p class="text-xs text-gray-400 mb-4 uppercase tracking-widest font-semibold">
+                    <i class="fas fa-clock mr-1"></i>
+                    <span th:text="${diaSemana}">LUNES</span> &nbsp;·&nbsp;
+                    <span th:text="${#temporals.format(fechaActual,'dd/MM/yyyy')}">01/01/2025</span>
+                </p>
+
+                <!-- ── Ingresos técnicos del día ── -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-users mr-1"></i>Ingresos técnicos – Hoy
+                        </span>
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
+                        <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white text-center col-span-2 sm:col-span-1 lg:col-span-1">
+                            <div class="text-3xl font-extrabold" th:text="${ingresosHoy}">0</div>
+                            <div class="text-xs opacity-90 mt-1">Registros totales</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-indigo-700" th:text="${ticketsUnicosHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Tickets únicos</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-cyan-600" th:text="${cantidadCRQHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">CRQ</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-orange-500" th:text="${cantidadINCHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">INC</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-teal-600" th:text="${cantidadInspeccionHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Inspección/Ronda</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-blue-800" th:text="${salasTIHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Salas TI</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-green-700" th:text="${salasREDHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Salas RED</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Gestión de accesos del día ── -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-purple-100 text-purple-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-shield-alt mr-1"></i>Gestión de accesos – Hoy
+                        </span>
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white text-center">
+                            <div class="text-3xl font-extrabold" th:text="${gestionesDelDia}">0</div>
+                            <div class="text-xs opacity-90 mt-1">Gestiones del día</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-green-600" th:text="${ticketsAprobadosHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Aprobadas</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-yellow-500" th:text="${ticketsPendientesAprobacion}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Pend. aprobación</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-red-500" th:text="${ticketsRechazadosHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Rechazadas</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-orange-400" th:text="${ticketsDevueltosHoy}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Devueltas</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-gray-500" th:text="${ticketsPendientesCierre}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Pend. cierre</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Temperatura del día ── -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-red-100 text-red-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-thermometer-half mr-1"></i>Temperatura – Hoy
+                        </span>
+                    </h2>
+                    <div th:if="${resumenTempDiario != null}" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div class="stat-card bg-gradient-to-br from-red-400 to-orange-500 rounded-xl p-4 text-white text-center">
+                            <div class="text-3xl font-extrabold" th:text="${#numbers.formatDecimal(resumenTempDiario.promedio, 1, 1) + '°'}">–</div>
+                            <div class="text-xs opacity-90 mt-1">Promedio</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-blue-600" th:text="${#numbers.formatDecimal(resumenTempDiario.minima, 1, 1) + '°'}">–</div>
+                            <div class="text-xs text-gray-500 mt-1">Mínima</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-red-600" th:text="${#numbers.formatDecimal(resumenTempDiario.maxima, 1, 1) + '°'}">–</div>
+                            <div class="text-xs text-gray-500 mt-1">Máxima</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold"
+                                 th:classappend="${resumenTempDiario.alertas > 0} ? 'text-red-600' : 'text-green-600'"
+                                 th:text="${resumenTempDiario.alertas}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Alertas</div>
+                        </div>
+                    </div>
+                    <div th:if="${resumenTempDiario == null}" class="bg-gray-50 rounded-xl p-8 text-center text-gray-400">
+                        <i class="fas fa-thermometer-empty text-4xl mb-3 block"></i>
+                        <p class="text-sm">Sin mediciones de temperatura para hoy.</p>
+                    </div>
+
+                    <!-- Tabla últimas mediciones -->
+                    <div th:if="${ultimasMedicionesTemp != null and !#lists.isEmpty(ultimasMedicionesTemp)}"
+                         class="bg-white rounded-xl shadow overflow-hidden mt-4">
+                        <div class="px-4 py-3 border-b border-gray-100 font-semibold text-sm text-gray-700">
+                            <i class="fas fa-list-alt mr-1 text-gray-400"></i>Últimas mediciones
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Sala</th>
+                                        <th class="px-4 py-2 text-left">Sensor</th>
+                                        <th class="px-4 py-2 text-right">Temp (°C)</th>
+                                        <th class="px-4 py-2 text-left">Fecha/Hora</th>
+                                        <th class="px-4 py-2 text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="m : ${ultimasMedicionesTemp}"
+                                        class="border-t border-gray-50 table-row-hover">
+                                        <td class="px-4 py-2 font-medium" th:text="${m.sala}">–</td>
+                                        <td class="px-4 py-2 text-gray-600" th:text="${m.nombreSensor}">–</td>
+                                        <td class="px-4 py-2 text-right font-bold"
+                                            th:classappend="${m.temperatura != null and m.temperatura > 25} ? 'text-red-600' : 'text-gray-800'"
+                                            th:text="${m.temperatura != null ? #numbers.formatDecimal(m.temperatura,1,1) : '—'}">–</td>
+                                        <td class="px-4 py-2 text-gray-500"
+                                            th:text="${#temporals.format(m.fechaMedicion,'dd/MM HH:mm')}">–</td>
+                                        <td class="px-4 py-2 text-center">
+                                            <span th:if="${m.esAlerta}"
+                                                  class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>Alerta
+                                            </span>
+                                            <span th:unless="${m.esAlerta}"
+                                                  class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                                <i class="fas fa-check mr-1"></i>Normal
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Registros activos del día ── -->
+                <div th:if="${registrosActivosHoy != null and !#lists.isEmpty(registrosActivosHoy)}" class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-green-100 text-green-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-id-badge mr-1"></i>Registros activos – Hoy
+                        </span>
+                    </h2>
+                    <div class="bg-white rounded-xl shadow overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Ticket</th>
+                                        <th class="px-4 py-2 text-left">Técnico</th>
+                                        <th class="px-4 py-2 text-left">Empresa</th>
+                                        <th class="px-4 py-2 text-left">Sala</th>
+                                        <th class="px-4 py-2 text-left">Ingreso</th>
+                                        <th class="px-4 py-2 text-center">Estado acceso</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="r : ${registrosActivosHoy}"
+                                        class="border-t border-gray-50 table-row-hover">
+                                        <td class="px-4 py-2 font-mono text-xs text-blue-700" th:text="${r.numeroTicket}">–</td>
+                                        <td class="px-4 py-2 font-medium" th:text="${r.nombreTecnico}">–</td>
+                                        <td class="px-4 py-2 text-gray-600" th:text="${r.empresa}">–</td>
+                                        <td class="px-4 py-2 text-gray-600" th:text="${r.salaRemedy}">–</td>
+                                        <td class="px-4 py-2 text-gray-500"
+                                            th:text="${r.fechaIngreso != null ? #temporals.format(r.fechaIngreso,'HH:mm') : '—'}">–</td>
+                                        <td class="px-4 py-2 text-center">
+                                            <span th:if="${r.estadoGestion != null}"
+                                                  class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                                  th:classappend="${r.estadoGestion == 'Aprobada'} ? 'bg-green-100 text-green-700' :
+                                                                   (${r.estadoGestion == 'Rechazada'} ? 'bg-red-100 text-red-700' :
+                                                                    'bg-yellow-100 text-yellow-700')"
+                                                  th:text="${r.estadoGestion}">–</span>
+                                            <span th:if="${r.estadoGestion == null}"
+                                                  class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Sin gestión</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /tab diario -->
+
+            <!-- ══════════════════════════════════════════════════════
+                  PESTAÑA MENSUAL
+                 ══════════════════════════════════════════════════════ -->
+            <div th:if="${modo == 'mensual'}">
+
+                <!-- Mes/Año actual -->
+                <p class="text-xs text-gray-400 mb-4 uppercase tracking-widest font-semibold">
+                    <i class="fas fa-calendar-alt mr-1"></i>
+                    <span th:text="${mesActual}">MES</span> &nbsp;·&nbsp;
+                    <span th:text="${anioActual}">2025</span>
+                </p>
+
+                <!-- ── Ingresos técnicos del mes ── -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-users mr-1"></i>Ingresos técnicos – Mes
+                        </span>
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
+                        <div class="stat-card bg-gradient-to-br from-blue-600 to-dcim-primary rounded-xl p-4 text-white text-center col-span-2 sm:col-span-1 lg:col-span-1">
+                            <div class="text-3xl font-extrabold" th:text="${ingresosTotalesMes}">0</div>
+                            <div class="text-xs opacity-90 mt-1">Registros totales</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-indigo-700" th:text="${ticketsUnicos}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Tickets únicos</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-cyan-600" th:text="${cantidadCRQ}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">CRQ</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-orange-500" th:text="${cantidadINC}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">INC</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-teal-600" th:text="${cantidadInspeccionRonda}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Inspección/Ronda</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-blue-800" th:text="${salasTI}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Salas TI</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-green-700" th:text="${salasRED}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Salas RED</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Gestión de accesos del mes ── -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-purple-100 text-purple-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-shield-alt mr-1"></i>Gestión de accesos – Mes
+                        </span>
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div class="stat-card bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl p-4 text-white text-center">
+                            <div class="text-3xl font-extrabold" th:text="${gestionesTotalesMes}">0</div>
+                            <div class="text-xs opacity-90 mt-1">Gestiones totales</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-green-600" th:text="${ticketsAprobadosMes}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Aprobadas</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-yellow-500" th:text="${ticketsPendientesAprobacion}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Pend. aprobación</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-red-500" th:text="${ticketsRechazadosMes}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Rechazadas</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-orange-400" th:text="${ticketsDevueltosMes}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Devueltas</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-gray-500" th:text="${ticketsPendientesCierre}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Pend. cierre</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Temperatura del mes ── -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-red-100 text-red-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-thermometer-half mr-1"></i>Temperatura – Mes
+                        </span>
+                    </h2>
+
+                    <div th:if="${resumenTempMensual != null}" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="stat-card bg-gradient-to-br from-red-500 to-orange-500 rounded-xl p-4 text-white text-center">
+                            <div class="text-3xl font-extrabold" th:text="${#numbers.formatDecimal(resumenTempMensual.promedio, 1, 1) + '°'}">–</div>
+                            <div class="text-xs opacity-90 mt-1">Promedio mensual</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-blue-600" th:text="${#numbers.formatDecimal(resumenTempMensual.minima, 1, 1) + '°'}">–</div>
+                            <div class="text-xs text-gray-500 mt-1">Mínima</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold text-red-600" th:text="${#numbers.formatDecimal(resumenTempMensual.maxima, 1, 1) + '°'}">–</div>
+                            <div class="text-xs text-gray-500 mt-1">Máxima</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold"
+                                 th:classappend="${resumenTempMensual.alertas > 0} ? 'text-red-600' : 'text-green-600'"
+                                 th:text="${resumenTempMensual.alertas}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Alertas totales</div>
+                        </div>
+                    </div>
+                    <div th:if="${resumenTempMensual == null}" class="bg-gray-50 rounded-xl p-8 text-center text-gray-400 mb-6">
+                        <i class="fas fa-thermometer-empty text-4xl mb-3 block"></i>
+                        <p class="text-sm">Sin mediciones de temperatura para este mes.</p>
+                    </div>
+
+                    <!-- Gráfico de tendencia mensual -->
+                    <div th:if="${tempLabels != null and !#lists.isEmpty(tempLabels)}"
+                         class="bg-white rounded-xl shadow p-5">
+                        <div class="font-semibold text-sm text-gray-700 mb-3">
+                            <i class="fas fa-chart-line mr-1 text-gray-400"></i>Tendencia de temperatura diaria
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="tempChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /tab mensual -->
+
+        </div><!-- /panel principal con sitio -->
+    </div><!-- /container -->
+
+    <!-- ══ CHART.JS SCRIPT ══ -->
+    <div th:if="${modo == 'mensual' and tempLabels != null and !#lists.isEmpty(tempLabels)}">
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            var labels  = /*[[${tempLabels}]]*/  [];
+            var valores = /*[[${tempValores}]]*/ [];
+            var numValores = valores.map(function(v) { return v === 'null' ? null : parseFloat(v); });
+
+            var ctx = document.getElementById('tempChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Temperatura promedio (°C)',
+                            data: numValores,
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229,62,62,.1)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#e53e3e',
+                            fill: true,
+                            tension: 0.35,
+                            spanGaps: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                title: { display: true, text: '°C', font: { size: 11 } },
+                                grid: { color: 'rgba(0,0,0,.05)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 10 }, maxRotation: 45 }
+                            }
+                        }
+                    }
+                });
+            }
+            /*]]>*/
+        </script>
+    </div>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+</body>
+</html>
