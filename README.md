@@ -119,8 +119,17 @@ La aplicación inicia en: `http://localhost:8082`
 - Password hashing con **BCrypt**
 - **CSRF** habilitado en todas las rutas web
 - API REST en `/api/**` stateless, sin CSRF
-- Roles: `ADMIN`, `USER`, `SUPERVISOR`
+- Roles: `ADMIN`, `USER`, `VIEWER`, `CLIENTE`
+
+| Rol | Acceso |
+|-----|--------|
+| `ADMIN` | Todo — CRUD completo, gestión de usuarios y salas |
+| `USER` | Todos los módulos operativos — lectura y escritura |
+| `VIEWER` | Solo lectura — puede ver todas las páginas, **no puede** guardar ni modificar datos. Sesión infinita (pantalla monitoreo 24/7). Bloqueado a nivel de filtro HTTP + botones ocultos en UI. |
+| `CLIENTE` | Dashboard cliente solamente |
+
 - Todas las rutas protegidas excepto `/`, `/login`, `/api/**`
+- `ViewerReadOnlyFilter`: intercepta POST/PUT/DELETE/PATCH de VIEWER y redirige a `/dashboard?errorViewer=1`
 
 ---
 
@@ -151,6 +160,18 @@ Invoke-RestMethod -Uri "https://api.render.com/deploy/srv-d830j9n2gups73c6oui0?k
 ---
 
 ## Historial de Cambios
+
+### 2026-05-20 — Rol VIEWER, Plano Sala UX, Fixes Repositorios
+- **Feat:** Rol `VIEWER` implementado completamente — solo lectura en toda la aplicación
+  - `ViewerReadOnlyFilter.java`: bloquea POST/PUT/DELETE/PATCH → redirige a `/dashboard?errorViewer=1`
+  - `SecurityConfig.java`: VIEWER tiene acceso GET a todos los módulos operativos
+  - `dashboard.html`: alerta amber cuando `?errorViewer=1`
+  - 9 plantillas Thymeleaf: botones de escritura ocultos con `sec:authorize="hasAnyRole('ADMIN','USER')"`
+- **Feat:** Editor plano sala (`plano-sala.html`): botón Guardar muestra banner con links "Ver plano" y "Planos guardados"
+- **Fix:** `InventarioRepository` — añadidos `findAllByOrderByIdAsc`, `countBySala`, `findDistinctSitios`, `findDistinctSalasBySitio`, `findDistinctRacksBySitioAndSala`, `findByFiltroLayout`
+- **Fix:** `MedicionTemperaturaRepository` — añadidos `findPuntoIdsRegistradosEnFechaYHorario`, `findBySitioIdAndFechaRange`
+- **Limpieza:** Eliminadas 4 plantillas huérfanas (`coming-soon.html`, `layout-sala.html`, `plano-sala-view.html`, `create-success.html`)
+- **Compilación:** Verificado con JDK 25 (Eclipse Adoptium) — 0 errores
 
 ### 2026-05-19 — Fix LazyLoading, Plano Sala, Dashboard
 - **Fix crítico:** `FetchType.LAZY → FetchType.EAGER` en 8 entidades JPA (Sala, GestionAcceso, IngresoAP, Inventario, MedicionTemperatura, PlanoSala, PlanoSalaElemento, PuntoMedicion). Resolvía `LazyInitializationException` en producción con `spring.jpa.open-in-view=false`.
