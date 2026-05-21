@@ -148,6 +148,10 @@
             <input type="range" id="moldOvlE" min="-150" max="200" step="5" value="0" oninput="onMoldChange('ovlE', this.value)" style="width:100%; accent-color:#7c3aed;">
           </div>
         </div>
+        <div id="moldRotSection" style="display:none; margin-top:8px;">
+          <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>🔄 Rotación</span><span id="moldRotVal" style="color:#7c3aed; font-weight:700;">0°</span></label>
+          <input type="range" id="moldRot" min="0" max="355" step="5" value="0" oninput="onMoldChange('rot', this.value)" style="width:100%; accent-color:#7c3aed;">
+        </div>
       </div>
       <p style="font-size:10px; color:#6366f1; margin-top:8px; line-height:1.5;">
         * Negativos expanden hacia palmetas vecinas. Positivos encogen hacia el interior.
@@ -592,7 +596,8 @@ function cellInnerHTML (cd, isSel) {
       var ovlB = cd.ovlS !== undefined ? cd.ovlS : 0;
       var ovlL = cd.ovlO !== undefined ? cd.ovlO : 0;
       var ovlR = cd.ovlE !== undefined ? cd.ovlE : 0;
-      result += '<div style="position:absolute;top:' + ovlT + '%;bottom:' + ovlB + '%;left:' + ovlL + '%;right:' + ovlR + '%;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + ovl.tc + ';z-index:20;pointer-events:none;">' + ovl.text + '</div>';
+      var rotStyle = (cd.overlay === 'puerta' && cd.rot) ? 'transform:rotate(' + cd.rot + 'deg);transform-origin:center;' : '';
+      result += '<div style="position:absolute;top:' + ovlT + '%;bottom:' + ovlB + '%;left:' + ovlL + '%;right:' + ovlR + '%;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + ovl.tc + ';z-index:20;pointer-events:none;' + rotStyle + '">' + ovl.text + '</div>';
     }
   }
   // Nombre del rack (desde inventario) — etiqueta pequeña en la celda
@@ -720,6 +725,15 @@ function updateMoldPanel () {
     document.getElementById('moldOvlSVal').textContent = Math.round(ovlS * 0.6) + ' cm';
     document.getElementById('moldOvlOVal').textContent = Math.round(ovlO * 0.6) + ' cm';
     document.getElementById('moldOvlEVal').textContent = Math.round(ovlE * 0.6) + ' cm';
+    var rotSection = document.getElementById('moldRotSection');
+    if (d.overlay === 'puerta') {
+      rotSection.style.display = 'block';
+      var rot = d.rot !== undefined ? d.rot : 0;
+      document.getElementById('moldRot').value = rot;
+      document.getElementById('moldRotVal').textContent = rot + '°';
+    } else {
+      rotSection.style.display = 'none';
+    }
   } else {
     ovlSection.style.display = 'none';
   }
@@ -729,9 +743,10 @@ function onMoldChange (field, value) {
   if (!selectedCoord || !gridData[selectedCoord]) return;
   gridData[selectedCoord][field] = Number(value);
   var keyMap = { norte:'moldNorteVal', sur:'moldSurVal', oeste:'moldOesteVal', este:'moldEsteVal',
-                 ovlN:'moldOvlNVal', ovlS:'moldOvlSVal', ovlO:'moldOvlOVal', ovlE:'moldOvlEVal' };
+                 ovlN:'moldOvlNVal', ovlS:'moldOvlSVal', ovlO:'moldOvlOVal', ovlE:'moldOvlEVal',
+                 rot:'moldRotVal' };
   var el = document.getElementById(keyMap[field]);
-  if (el) el.textContent = Math.round(Number(value) * 0.6) + ' cm';
+  if (el) el.textContent = field === 'rot' ? Number(value) + '°' : Math.round(Number(value) * 0.6) + ' cm';
   refreshCell(selectedCoord);
   persist();
 }
