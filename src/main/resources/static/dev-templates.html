@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛠 Dev · Mapa de Templates — DCIM</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
+    /* Header */
+    .header{background:linear-gradient(90deg,#1e3a5f,#0b3c75);padding:18px 32px;display:flex;align-items:center;gap:16px;border-bottom:2px solid #1d4ed8;}
+    .header h1{font-size:18px;font-weight:800;color:#fff;letter-spacing:.02em;}
+    .header .badge{background:rgba(234,179,8,0.25);color:#fbbf24;border:1px solid rgba(234,179,8,0.4);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.05em;}
+    .header .count{background:rgba(255,255,255,0.1);color:#93c5fd;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-left:auto;}
+    /* Filters */
+    .filters{display:flex;gap:8px;padding:16px 32px;background:#0f172a;border-bottom:1px solid #1e293b;flex-wrap:wrap;align-items:center;}
+    .filter-btn{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s;background:transparent;}
+    .filter-btn.all   {border-color:#6366f1;color:#818cf8;} .filter-btn.all.active,  .filter-btn.all:hover  {background:#6366f1;color:#fff;}
+    .filter-btn.activo{border-color:#22c55e;color:#4ade80;} .filter-btn.activo.active,.filter-btn.activo:hover{background:#16a34a;color:#fff;}
+    .filter-btn.frag  {border-color:#f59e0b;color:#fbbf24;} .filter-btn.frag.active,  .filter-btn.frag:hover  {background:#d97706;color:#fff;}
+    .filter-btn.huerfana{border-color:#ef4444;color:#f87171;}.filter-btn.huerfana.active,.filter-btn.huerfana:hover{background:#dc2626;color:#fff;}
+    .search-box{margin-left:auto;background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:5px 12px;border-radius:20px;font-size:12px;width:200px;outline:none;}
+    .search-box::placeholder{color:#64748b;}
+    .search-box:focus{border-color:#6366f1;}
+    /* Stats bar */
+    .stats{display:flex;gap:4px;padding:12px 32px;background:#0f172a;}
+    .stat{flex:1;background:#1e293b;border-radius:8px;padding:10px 14px;text-align:center;border:1px solid #334155;}
+    .stat .n{font-size:22px;font-weight:800;}
+    .stat .l{font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+    .stat.s-activo .n{color:#4ade80;} .stat.s-frag .n{color:#fbbf24;} .stat.s-huerfana .n{color:#f87171;} .stat.s-total .n{color:#93c5fd;}
+    /* Main */
+    .main{padding:20px 32px;display:flex;flex-direction:column;gap:16px;}
+    /* Category header */
+    .cat-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;padding:6px 0 2px;border-bottom:1px solid #1e293b;margin-bottom:4px;}
+    /* Template card */
+    .card{background:#1e293b;border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px;border:1px solid #334155;transition:border-color .15s;cursor:default;}
+    .card:hover{border-color:#475569;}
+    .card.activo{border-left:3px solid #22c55e;}
+    .card.frag  {border-left:3px solid #f59e0b;}
+    .card.huerfana{border-left:3px solid #ef4444;}
+    /* Status badge */
+    .status{flex-shrink:0;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em;}
+    .status.activo   {background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+    .status.frag     {background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);}
+    .status.huerfana {background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);}
+    /* File name */
+    .file-name{font-size:13px;font-weight:700;color:#e2e8f0;font-family:'Cascadia Code','Fira Code',monospace;}
+    .file-path{font-size:10px;color:#64748b;margin-top:1px;font-family:'Cascadia Code','Fira Code',monospace;}
+    /* Routes */
+    .routes{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px;}
+    .route-tag{background:#0f172a;border:1px solid #334155;border-radius:6px;padding:2px 8px;font-size:11px;color:#7dd3fc;font-family:'Cascadia Code','Fira Code',monospace;text-decoration:none;transition:all .15s;}
+    .route-tag:hover{background:#1d4ed8;border-color:#3b82f6;color:#fff;}
+    .route-tag.no-link{color:#4b5563;cursor:default;}
+    .route-tag.no-link:hover{background:#0f172a;border-color:#334155;color:#4b5563;}
+    .route-tag.param-link{color:#a78bfa;border-color:#7c3aed;cursor:pointer;}
+    .route-tag.param-link:hover{background:#7c3aed;border-color:#8b5cf6;color:#fff;}
+    /* Role pills */
+    .roles{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+    .role-pill{padding:1px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.04em;}
+    .role-ADMIN   {background:rgba(139,92,246,0.2);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);}
+    .role-USER    {background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);}
+    .role-VIEWER  {background:rgba(20,184,166,0.2);color:#2dd4bf;border:1px solid rgba(20,184,166,0.3);}
+    .role-CLIENTE {background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.3);}
+    .role-PUBLIC  {background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+    /* Card body */
+    .card-body{flex:1;min-width:0;}
+    .card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .desc{font-size:11px;color:#94a3b8;margin-top:3px;}
+    /* Hidden */
+    .hidden{display:none !important;}
+    /* Footer */
+    .footer{padding:14px 32px;color:#475569;font-size:11px;border-top:1px solid #1e293b;margin-top:8px;}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <span style="font-size:22px;">🛠</span>
+  <div>
+    <h1>Mapa de Templates — DCIM</h1>
+    <div style="font-size:11px;color:#93c5fd;margin-top:2px;">Herramienta local de desarrollo · Solo visible en entorno local</div>
+  </div>
+  <span class="badge">⚠ DEV ONLY</span>
+  <span class="count" id="visibleCount"></span>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat s-total"><div class="n" id="cTotal">0</div><div class="l">Total</div></div>
+  <div class="stat s-activo"><div class="n" id="cActivo">0</div><div class="l">En uso</div></div>
+  <div class="stat s-frag"><div class="n" id="cFrag">0</div><div class="l">Fragmentos</div></div>
+  <div class="stat s-huerfana"><div class="n" id="cHuerfana">0</div><div class="l">Huérfanas</div></div>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+  <button class="filter-btn all active" onclick="setFilter('all',this)">Todos</button>
+  <button class="filter-btn activo" onclick="setFilter('activo',this)">✅ En uso</button>
+  <button class="filter-btn frag" onclick="setFilter('frag',this)">🧩 Fragmentos</button>
+  <button class="filter-btn huerfana" onclick="setFilter('huerfana',this)">⚠ Huérfanas</button>
+  <input class="search-box" id="searchBox" type="text" placeholder="Buscar template o ruta…" oninput="applySearch()">
+</div>
+
+<div class="main" id="mainContainer"></div>
+
+<div class="footer">
+  Accesible en <code style="background:#1e293b;padding:1px 6px;border-radius:4px;color:#7dd3fc;">http://localhost:8080/dev-templates.html</code>
+  &nbsp;·&nbsp; Generado para DCIM · Solo uso local
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────
+const TEMPLATES = [
+  // ── Públicas ──────────────────────────────────────────────
+  { cat:'Públicas', file:'index.html', status:'activo', desc:'Página de inicio / landing', routes:['/index','/'], roles:['PUBLIC'] },
+  { cat:'Públicas', file:'login.html', status:'activo', desc:'Formulario de autenticación', routes:['/login'], roles:['PUBLIC'] },
+  { cat:'Públicas', file:'coming-soon.html', status:'huerfana', desc:'Página "Próximamente" — sin controlador asignado', routes:[], roles:[] },
+
+  // ── Dashboard ─────────────────────────────────────────────
+  { cat:'Dashboard', file:'dashboard.html', status:'activo', desc:'Panel principal de módulos operativos', routes:['/dashboard'], roles:['ADMIN','USER','VIEWER','CLIENTE'] },
+  { cat:'Dashboard', file:'dashboard-cliente.html', status:'activo', desc:'Dashboard unificado para cliente (selector sitio)', routes:['/dashboard/cliente'], roles:['ADMIN','VIEWER','CLIENTE'] },
+  { cat:'Dashboard', file:'dashboard-cliente-diario.html', status:'activo', desc:'Estadísticas diarias del sitio', routes:['/dashboard/cliente/diario'], roles:['ADMIN','VIEWER','CLIENTE'] },
+  { cat:'Dashboard', file:'dashboard-cliente-mensual.html', status:'activo', desc:'Estadísticas mensuales del sitio', routes:['/dashboard/cliente/mensual'], roles:['ADMIN','VIEWER','CLIENTE'] },
+
+  // ── Estadísticas ──────────────────────────────────────────
+  { cat:'Estadísticas', file:'estadisticas.html', status:'activo', desc:'Vista unificada diaria + mensual + gráficos', routes:['/estadisticas'], roles:['ADMIN','VIEWER','CLIENTE'] },
+
+  // ── Inventario ────────────────────────────────────────────
+  { cat:'Inventario', file:'inventario.html', status:'activo', desc:'Listado y búsqueda de inventario', routes:['/inventario','/inventario/buscar'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Inventario', file:'inventario-form.html', status:'activo', desc:'Formulario crear / editar equipo', routes:['/inventario/crear','/inventario/editar/{id}'], roles:['ADMIN','USER'] },
+  { cat:'Inventario', file:'inventario-view.html', status:'activo', desc:'Detalle de un equipo de inventario', routes:['/inventario/{id}'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Inventario', file:'inventario-import.html', status:'activo', desc:'Importación masiva de inventario', routes:['/inventario/importar'], roles:['ADMIN','USER'] },
+
+  // ── Plano de Sala ─────────────────────────────────────────
+  { cat:'Plano de Sala', file:'plano-sala.html', status:'activo', desc:'Editor de plano técnico (palmetas 60×60)', routes:['/plano-sala'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Plano de Sala', file:'plano-sala-ver.html', status:'activo', desc:'Visor de plano guardado (solo lectura)', routes:['/plano-sala/ver/{id}'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Plano de Sala', file:'plano-sala-plantillas.html', status:'activo', desc:'Listado de planos guardados', routes:['/plano-sala/plantillas'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Plano de Sala', file:'plano-sala-plantilla-view.html', status:'activo', desc:'Vista de una plantilla de plano', routes:['/plano-sala/plantillas/{id}'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Plano de Sala', file:'layout-sala.html', status:'huerfana', desc:'Layout de sala — sin controlador asignado', routes:[], roles:[] },
+  { cat:'Plano de Sala', file:'layout-vertical.html', status:'activo', desc:'Layout vertical de rack/sala', routes:['/layout-vertical'], roles:['ADMIN','USER','VIEWER'] },
+
+  // ── Temperaturas ──────────────────────────────────────────
+  { cat:'Temperaturas', file:'temperaturas.html', status:'activo', desc:'Listado de mediciones de temperatura', routes:['/temperaturas'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Temperaturas', file:'temperaturas-registro.html', status:'activo', desc:'Formulario de registro de medición', routes:['/temperaturas/registro'], roles:['ADMIN','USER'] },
+
+  // ── Ingreso AP ────────────────────────────────────────────
+  { cat:'Ingreso AP', file:'ingresoap.html', status:'activo', desc:'Registro de ingresos técnicos', routes:['/ingresoap'], roles:['ADMIN','USER','VIEWER'] },
+
+  // ── Salas ─────────────────────────────────────────────────
+  { cat:'Salas', file:'salas.html', status:'activo', desc:'Gestión de salas (CRUD)', routes:['/salas'], roles:['ADMIN'] },
+
+  // ── Gestión de Accesos ────────────────────────────────────
+  { cat:'Gestión de Accesos', file:'gestion/gestion-list.html', status:'activo', desc:'Listado de gestiones de acceso', routes:['/gestion/list','/gestion/list/{sitio}'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Gestión de Accesos', file:'gestion/gestion-create.html', status:'activo', desc:'Crear nueva gestión de acceso', routes:['/gestion/create'], roles:['ADMIN','USER'] },
+  { cat:'Gestión de Accesos', file:'gestion/gestion-edit.html', status:'activo', desc:'Editar gestión de acceso', routes:['/gestion/edit/{id}'], roles:['ADMIN','USER'] },
+  { cat:'Gestión de Accesos', file:'gestion/gestion-view.html', status:'activo', desc:'Detalle de una gestión de acceso', routes:['/gestion/{id}'], roles:['ADMIN','USER','VIEWER'] },
+
+  // ── Usuarios ──────────────────────────────────────────────
+  { cat:'Usuarios', file:'user/list.html', status:'activo', desc:'Listado de usuarios del sistema', routes:['/user/list'], roles:['ADMIN','USER'] },
+  { cat:'Usuarios', file:'user/create.html', status:'activo', desc:'Crear nuevo usuario', routes:['/user/create'], roles:['PUBLIC'] },
+  { cat:'Usuarios', file:'user/read.html', status:'activo', desc:'Detalle de usuario', routes:['/user/read/{id}'], roles:['ADMIN','USER'] },
+  { cat:'Usuarios', file:'user/update.html', status:'activo', desc:'Editar usuario', routes:['/user/update/{id}'], roles:['ADMIN','USER'] },
+  { cat:'Usuarios', file:'user/delete.html', status:'activo', desc:'Confirmar eliminación de usuario', routes:['/user/delete/{id}'], roles:['ADMIN','USER'] },
+  { cat:'Usuarios', file:'user/ingresoap-list.html', status:'activo', desc:'Listado de Ingreso AP (vista usuario)', routes:['/user/ingresoap-list'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Usuarios', file:'user/ingresoap-read.html', status:'activo', desc:'Detalle de Ingreso AP (vista usuario)', routes:['/user/ingresoap-read/{id}'], roles:['ADMIN','USER','VIEWER'] },
+  { cat:'Usuarios', file:'user/ingresoap-update.html', status:'activo', desc:'Editar Ingreso AP (vista usuario)', routes:['/user/ingresoap-update/{id}'], roles:['ADMIN','USER'] },
+  { cat:'Usuarios', file:'user/ingresoap-delete.html', status:'activo', desc:'Eliminar Ingreso AP (vista usuario)', routes:['/user/ingresoap-delete/{id}'], roles:['ADMIN','USER'] },
+
+  // ── Herramientas / Admin ──────────────────────────────────
+  { cat:'Admin / Dev', file:'database-viewer.html', status:'activo', desc:'Visor de base de datos (herramienta dev)', routes:['/database-viewer'], roles:['ADMIN'] },
+
+  // ── Fragmentos ────────────────────────────────────────────
+  { cat:'Fragmentos', file:'fragments/headers.html', status:'frag', desc:'Incluye meta tags, CSS y dependencias <head>', routes:[], roles:[] },
+  { cat:'Fragmentos', file:'fragments/navdar.html', status:'frag', desc:'Barra de navegación superior (nav)', routes:[], roles:[] },
+  { cat:'Fragmentos', file:'fragments/footer.html', status:'frag', desc:'Pie de página', routes:[], roles:[] },
+  { cat:'Fragmentos', file:'fragments/dashboard-button.html', status:'frag', desc:'Botón de acceso rápido al dashboard', routes:[], roles:[] },
+];
+
+// ─── RENDER ───────────────────────────────────────────────────
+let activeFilter = 'all';
+
+function buildPage() {
+  // Stats
+  const total    = TEMPLATES.length;
+  const activos  = TEMPLATES.filter(t => t.status === 'activo').length;
+  const frags    = TEMPLATES.filter(t => t.status === 'frag').length;
+  const huerfanas= TEMPLATES.filter(t => t.status === 'huerfana').length;
+  document.getElementById('cTotal').textContent    = total;
+  document.getElementById('cActivo').textContent   = activos;
+  document.getElementById('cFrag').textContent     = frags;
+  document.getElementById('cHuerfana').textContent = huerfanas;
+
+  renderCards();
+}
+
+function renderCards() {
+  const container = document.getElementById('mainContainer');
+  const search = (document.getElementById('searchBox').value || '').toLowerCase().trim();
+  const filter = activeFilter;
+
+  // Filter + search
+  const visible = TEMPLATES.filter(t => {
+    if (filter !== 'all' && t.status !== filter) return false;
+    if (search && !t.file.toLowerCase().includes(search) && !t.routes.some(r => r.toLowerCase().includes(search)) && !t.desc.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  document.getElementById('visibleCount').textContent = visible.length + ' templates';
+
+  // Group by category
+  const cats = {};
+  visible.forEach(t => { if (!cats[t.cat]) cats[t.cat] = []; cats[t.cat].push(t); });
+
+  if (visible.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:48px;color:#475569;font-size:14px;">Sin resultados para "' + search + '"</div>';
+    return;
+  }
+
+  let html = '';
+  for (const [cat, items] of Object.entries(cats)) {
+    html += '<div>';
+    html += '<div class="cat-title">' + catIcon(cat) + ' ' + cat + ' <span style="color:#475569;font-weight:400;">(' + items.length + ')</span></div>';
+    items.forEach(t => { html += cardHTML(t); });
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function cardHTML(t) {
+  const statusLabel = { activo:'✅ EN USO', frag:'🧩 FRAGMENTO', huerfana:'⚠ HUÉRFANA' }[t.status];
+  const routesHTML = t.routes.length > 0
+    ? t.routes.map(r => {
+        const hasParam = r.includes('{');
+        if (hasParam) {
+          const safe = r.replace(/'/g, "\\'");
+          return '<span class="route-tag param-link" onclick="openParam(\'' + safe + '\')" title="Clic para ingresar parámetros">' + r + ' ✏️</span>';
+        }
+        return '<a class="route-tag" href="' + r + '" target="_blank">' + r + '</a>';
+      }).join('')
+    : (t.status === 'frag' ? '<span class="route-tag no-link" style="color:#92400e;">incluido via th:replace</span>'
+                           : '<span class="route-tag no-link" style="color:#dc2626;">sin ruta definida</span>');
+
+  const rolesHTML = t.roles.length > 0
+    ? t.roles.map(r => '<span class="role-pill role-' + r + '">' + r + '</span>').join('')
+    : '';
+
+  return `<div class="card ${t.status}" style="margin-bottom:6px;">
+    <span class="status ${t.status}">${statusLabel}</span>
+    <div class="card-body">
+      <div class="card-head">
+        <span class="file-name">${t.file}</span>
+      </div>
+      <div class="desc">${t.desc}</div>
+      <div class="routes">${routesHTML}</div>
+      ${rolesHTML ? '<div class="roles">' + rolesHTML + '</div>' : ''}
+    </div>
+  </div>`;
+}
+
+function catIcon(cat) {
+  const icons = {
+    'Públicas':'🌐','Dashboard':'📊','Estadísticas':'📈','Inventario':'📦',
+    'Plano de Sala':'🗺','Temperaturas':'🌡','Ingreso AP':'🔑','Salas':'🏢',
+    'Gestión de Accesos':'🔐','Usuarios':'👤','Admin / Dev':'🛠','Fragmentos':'🧩'
+  };
+  return icons[cat] || '📄';
+}
+
+function openParam(route) {
+  // Extract all {param} names from the route
+  const params = [...route.matchAll(/\{([^}]+)\}/g)].map(m => m[1]);
+  let url = route;
+  for (const p of params) {
+    const val = window.prompt('Ingresa el valor para "' + p + '" en:\n' + route);
+    if (val === null) return; // cancelled
+    if (val.trim() === '') { alert('Valor vacío, cancelado.'); return; }
+    url = url.replace('{' + p + '}', encodeURIComponent(val.trim()));
+  }
+  window.open(url, '_blank');
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+function applySearch() { renderCards(); }
+
+// Init
+buildPage();
+</script>
+</body>
+</html>

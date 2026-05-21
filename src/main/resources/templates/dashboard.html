@@ -203,8 +203,8 @@
             <span>📋 Lista de Gestiones</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
-          <a th:href="@{/dashboard/cliente}" class="module-link text-violet-700">
-            <span>📊 Ver Estadísticas</span>
+          <a th:href="@{/dashboard/sitio}" class="module-link text-violet-700">
+            <span>📊 Dashboard por Sitio</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -265,8 +265,8 @@
       </div>
     </div>
 
-    <!-- Estadísticas (CLIENTE) -->
-    <div class="dcim-card" th:if="${usuarioLogueado != null and usuarioLogueado.rol == 'CLIENTE'}">
+    <!-- Estadísticas (CLIENTE + ADMIN) -->
+    <div class="dcim-card" th:if="${usuarioLogueado != null and (usuarioLogueado.rol == 'CLIENTE' or usuarioLogueado.rol == 'ADMIN')}">
       <div class="card-band" style="background: linear-gradient(90deg,#0b3c75,#00a4c8)"></div>
       <div class="p-5">
         <div class="flex items-center gap-3 mb-3">
@@ -299,62 +299,24 @@
       </div>
     </div>
 
-    <!-- Dashboard Cliente (ADMIN + VIEWER) -->
-    <div class="dcim-card" th:if="${usuarioLogueado != null and (usuarioLogueado.rol == 'ADMIN' or usuarioLogueado.rol == 'VIEWER')}">
+    <!-- Dashboard Unificado (ADMIN + VIEWER + CLIENTE) -->
+    <div class="dcim-card" th:if="${usuarioLogueado != null and (usuarioLogueado.rol == 'ADMIN' or usuarioLogueado.rol == 'VIEWER' or usuarioLogueado.rol == 'CLIENTE')}">
       <div class="card-band" style="background: linear-gradient(90deg,#1e3a5f,#7c3aed)"></div>
       <div class="p-5">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
                style="background:rgba(30,58,95,0.10)">📊</div>
           <div>
-            <h3 class="font-bold text-slate-800">Dashboard Cliente</h3>
-            <p class="text-xs text-slate-500">Reportes y estadísticas</p>
+            <h3 class="font-bold text-slate-800">Dashboard por Sitio</h3>
+            <p class="text-xs text-slate-500">Acceso, temperaturas, inventario y KPI</p>
           </div>
           <span class="ml-auto status-chip"
-                th:class="${usuarioLogueado.rol == 'ADMIN'} ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'"
+                th:class="${usuarioLogueado.rol == 'ADMIN'} ? 'bg-red-100 text-red-700' : (${usuarioLogueado.rol == 'CLIENTE'} ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700')"
                 th:text="${usuarioLogueado.rol}">ROL</span>
         </div>
         <div class="space-y-1 mt-3">
-          <a th:href="@{/dashboard/cliente/mensual}" class="module-link text-indigo-700">
-            <span>📆 Dashboard Mensual</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a th:href="@{/dashboard/cliente/diario}" class="module-link text-indigo-700">
-            <span>📅 Dashboard Diario</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a th:href="@{/dashboard/cliente}" class="module-link text-indigo-700">
-            <span>📈 Vista General</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Estadísticas (ADMIN + VIEWER) -->
-    <div class="dcim-card" th:if="${usuarioLogueado != null and (usuarioLogueado.rol == 'ADMIN' or usuarioLogueado.rol == 'VIEWER')}">
-      <div class="card-band" style="background: linear-gradient(90deg,#0e7490,#06b6d4)"></div>
-      <div class="p-5">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-               style="background:rgba(6,182,212,0.12)">📊</div>
-          <div>
-            <h3 class="font-bold text-slate-800">Estadísticas</h3>
-            <p class="text-xs text-slate-500">Reportes diarios y mensuales</p>
-          </div>
-          <span class="ml-auto tag-pill bg-cyan-100 text-cyan-700">reportes</span>
-        </div>
-        <div class="space-y-1 mt-3">
-          <a th:href="@{/dashboard/cliente/diario}" class="module-link text-cyan-700">
-            <span>📅 Dashboard Diario</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a th:href="@{/dashboard/cliente/mensual}" class="module-link text-cyan-700">
-            <span>📆 Dashboard Mensual</span>
-            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </a>
-          <a th:href="@{/estadisticas}" class="module-link text-cyan-700">
-            <span>📈 Vista Unificada</span>
+          <a th:href="@{/dashboard/sitio}" class="module-link text-indigo-700">
+            <span>📈 Ver Dashboard</span>
             <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -377,6 +339,28 @@
           <span>📐 Ver Plantillas</span>
           <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
+      </div>
+    </div>
+
+    <!-- Dev: Mapa de Templates (solo ADMIN, solo local) -->
+    <div class="dcim-card" th:if="${usuarioLogueado != null and usuarioLogueado.rol == 'ADMIN'}">
+      <div class="card-band" style="background: linear-gradient(90deg,#1e293b,#7c3aed)"></div>
+      <div class="p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+               style="background:rgba(124,58,237,0.12)">🛠</div>
+          <div>
+            <h3 class="font-bold text-slate-800">Dev · Templates</h3>
+            <p class="text-xs text-slate-500">Mapa local de vistas HTML</p>
+          </div>
+          <span class="ml-auto status-chip bg-violet-100 text-violet-700">ADMIN</span>
+        </div>
+        <div class="space-y-1 mt-3">
+          <a href="/dev-templates.html" target="_blank" class="module-link text-violet-700">
+            <span>🗂 Ver todos los templates</span>
+            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </div>
       </div>
     </div>
 

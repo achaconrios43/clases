@@ -207,7 +207,7 @@ const ITEM_TYPES = [
   { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
   { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
   { id: 'fms200',          label: 'Sistema FM200',            bg: '#6b0202',     border: '1px solid #dc2626',    br: '50%', text: 'FM', tc: '#fff',    scale: true  },
-  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '6px', text: 'E',  tc: '#fff',    scale: true  },
   { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
   { id: 'eeaa',            label: 'Sistema Climatización',     bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'EEAA', tc: '#fff',  scale: false },
   { id: 'borrar',          label: 'Goma de borrar (Quitar)',  bg: 'transparent', border: '2px dashed #d1d5db',   br: '3px', text: '✕',  tc: '#9ca3af', scale: false },
@@ -584,7 +584,7 @@ function cellInnerHTML (cd, isSel) {
       var bottom = cd.sur   !== undefined ? cd.sur   : 5;
       var left   = cd.oeste !== undefined ? cd.oeste : 5;
       var right  = cd.este  !== undefined ? cd.este  : 5;
-      result += '<div style="position:absolute;top:' + top + '%;bottom:' + bottom + '%;left:' + left + '%;right:' + right + '%;background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + (tool.scale ? '50%' : tool.br) + ';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:' + tool.tc + ';z-index:' + (isSel ? 50 : 10) + ';' + (tool.scale ? 'transform:scale(0.75);' : '') + 'pointer-events:none;">' + tool.text + '</div>';
+      result += '<div style="position:absolute;top:' + top + '%;bottom:' + bottom + '%;left:' + left + '%;right:' + right + '%;background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + tool.br + ';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:' + tool.tc + ';z-index:' + (isSel ? 50 : 10) + ';' + (tool.scale ? 'transform:scale(0.75);' : '') + 'pointer-events:none;">' + tool.text + '</div>';
     }
   }
   // Overlay layer — renders on top of base (muros, puertas, escalerillas, áreas, bajo piso)
@@ -653,6 +653,13 @@ function handleTile (coord, isClick) {
   } else if (OVERLAY_IDS.has(activeTool)) {
     if (!gridData[coord]) gridData[coord] = { norte: 5, sur: 5, oeste: 5, este: 5 };
     gridData[coord].overlay = activeTool;
+    // Default door: centered, 80% size
+    if (activeTool === 'puerta' && gridData[coord].ovlN === undefined) {
+      gridData[coord].ovlN = 10;
+      gridData[coord].ovlS = 10;
+      gridData[coord].ovlO = 10;
+      gridData[coord].ovlE = 10;
+    }
     refreshCell(coord);
     persist();
   } else {
@@ -726,17 +733,107 @@ function updateMoldPanel () {
     document.getElementById('moldOvlOVal').textContent = Math.round(ovlO * 0.6) + ' cm';
     document.getElementById('moldOvlEVal').textContent = Math.round(ovlE * 0.6) + ' cm';
     var rotSection = document.getElementById('moldRotSection');
+    var ovlSliders  = document.getElementById('moldOverlaySliders');
     if (d.overlay === 'puerta') {
       rotSection.style.display = 'block';
+      ovlSliders.style.display = 'none';
       var rot = d.rot !== undefined ? d.rot : 0;
-      document.getElementById('moldRot').value = rot;
-      document.getElementById('moldRotVal').textContent = rot + '°';
+      updatePuertaButtons(rot);
+      // Compute X / Y / size from ovlN/S/O/E
+      var sz = Math.round(100 - ovlN - ovlS);
+      var cx = Math.round(ovlO + sz / 2);
+      var cy = Math.round(ovlN + sz / 2);
+      document.getElementById('puertaX').value  = cx;
+      document.getElementById('puertaY').value  = cy;
+      document.getElementById('puertaSz').value = sz;
+      document.getElementById('puertaXVal').textContent  = cx + '%';
+      document.getElementById('puertaYVal').textContent  = cy + '%';
+      document.getElementById('puertaSzVal').textContent = sz + '%';
     } else {
       rotSection.style.display = 'none';
+      ovlSliders.style.display = 'flex';
     }
   } else {
     ovlSection.style.display = 'none';
   }
+}
+
+// ── Door-specific controls ──────────────────────
+function updatePuertaButtons(rot) {
+  var r = (((rot || 0) % 360) + 360) % 360;
+  [0, 90, 180, 270].forEach(function(d) {
+    var btn = document.getElementById('rotBtn' + d);
+    if (!btn) return;
+    var active = Math.abs(r - d) < 1;
+    btn.style.background   = active ? '#7c3aed' : '#e0e7ff';
+    btn.style.color        = active ? '#fff'    : '#4338ca';
+    btn.style.borderColor  = active ? '#5b21b6' : '#7c3aed';
+  });
+}
+
+function setPuertaRot(deg) {
+  if (!selectedCoord || !gridData[selectedCoord]) return;
+  gridData[selectedCoord].rot = deg;
+  updatePuertaButtons(deg);
+  refreshCell(selectedCoord);
+  persist();
+}
+
+function onPuertaXYSize(field, val) {
+  if (!selectedCoord || !gridData[selectedCoord]) return;
+  var d = gridData[selectedCoord];
+  var n = Number(val);
+  var sz = Math.round(100 - (d.ovlN || 0) - (d.ovlS || 0));
+  var cx = Math.round((d.ovlO || 0) + sz / 2);
+  var cy = Math.round((d.ovlN || 0) + sz / 2);
+  if (field === 'x')  { cx = n; document.getElementById('puertaXVal').textContent  = Math.round(n) + '%'; }
+  if (field === 'y')  { cy = n; document.getElementById('puertaYVal').textContent  = Math.round(n) + '%'; }
+  if (field === 'sz') { sz = n; document.getElementById('puertaSzVal').textContent = Math.round(n) + '%'; }
+  d.ovlN = Math.round(cy - sz / 2);
+  d.ovlS = Math.round(100 - cy - sz / 2);
+  d.ovlO = Math.round(cx - sz / 2);
+  d.ovlE = Math.round(100 - cx - sz / 2);
+  refreshCell(selectedCoord);
+  persist();
+}
+
+// ── Door-specific controls ──────────────────────
+function updatePuertaButtons(rot) {
+  var r = (((rot || 0) % 360) + 360) % 360;
+  [0, 90, 180, 270].forEach(function(d) {
+    var btn = document.getElementById('rotBtn' + d);
+    if (!btn) return;
+    var active = Math.abs(r - d) < 1;
+    btn.style.background  = active ? '#7c3aed' : '#e0e7ff';
+    btn.style.color       = active ? '#fff'    : '#4338ca';
+    btn.style.borderColor = active ? '#5b21b6' : '#7c3aed';
+  });
+}
+
+function setPuertaRot(deg) {
+  if (!selectedCoord || !gridData[selectedCoord]) return;
+  gridData[selectedCoord].rot = deg;
+  updatePuertaButtons(deg);
+  refreshCell(selectedCoord);
+  persist();
+}
+
+function onPuertaXYSize(field, val) {
+  if (!selectedCoord || !gridData[selectedCoord]) return;
+  var d = gridData[selectedCoord];
+  var n = Number(val);
+  var sz = Math.round(100 - (d.ovlN || 0) - (d.ovlS || 0));
+  var cx = Math.round((d.ovlO || 0) + sz / 2);
+  var cy = Math.round((d.ovlN || 0) + sz / 2);
+  if (field === 'x')  { cx = n; document.getElementById('puertaXVal').textContent  = Math.round(n) + '%'; }
+  if (field === 'y')  { cy = n; document.getElementById('puertaYVal').textContent  = Math.round(n) + '%'; }
+  if (field === 'sz') { sz = n; document.getElementById('puertaSzVal').textContent = Math.round(n) + '%'; }
+  d.ovlN = Math.round(cy - sz / 2);
+  d.ovlS = Math.round(100 - cy - sz / 2);
+  d.ovlO = Math.round(cx - sz / 2);
+  d.ovlE = Math.round(100 - cx - sz / 2);
+  refreshCell(selectedCoord);
+  persist();
 }
 
 function onMoldChange (field, value) {

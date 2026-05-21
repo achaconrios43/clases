@@ -161,6 +161,14 @@ Invoke-RestMethod -Uri "https://api.render.com/deploy/srv-d830j9n2gups73c6oui0?k
 
 ## Historial de Cambios
 
+### 2026-05-21 — Dashboard unificado por sitio + estabilización Render
+- **Feat:** Nuevo dashboard unificado por sitio en `/dashboard/sitio` con secciones de Acceso, Temperaturas, Inventario y KPI mensual.
+- **Feat:** Filtro por sala (`sala`) con soporte para temperaturas mensuales y alcance de inventario por sitio/sala.
+- **Fix:** Correcciones de Thymeleaf en `dashboard-sitio.html` para evitar cortes de respuesta (`ERR_INCOMPLETE_CHUNKED_ENCODING`) por expresiones inválidas.
+- **Fix:** Reemplazo de `#arrays.asList(...)` por lista SpEL válida en iteraciones por área (RED, TI, EMPRESA, NOC, OTRO).
+- **Fix:** Endurecimiento de métricas KPI con cálculo previo en controlador para evitar lógica frágil en la vista.
+- **Deploy:** Build validado con `mvnw compile`, push a GitHub y redeploy manual en Render por webhook.
+
 ### 2026-05-20 — Rol VIEWER, Plano Sala UX, Fixes Repositorios
 - **Feat:** Rol `VIEWER` implementado completamente — solo lectura en toda la aplicación
   - `ViewerReadOnlyFilter.java`: bloquea POST/PUT/DELETE/PATCH → redirige a `/dashboard?errorViewer=1`

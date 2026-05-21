@@ -50,6 +50,7 @@ public class MainController {
             Usuario usuario = usuarioDao.findByEmail(email).orElse(null);
             if (usuario != null) {
                 model.addAttribute("usuario", usuario);
+                model.addAttribute("usuarioLogueado", usuario);
             }
         }
         model.addAttribute("sitios", sitioRepository.findByActivoTrueOrderByNombreAsc());

@@ -149,7 +149,7 @@ var ITEM_TYPES = [
   { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
   { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
   { id: 'fms200',          label: 'Sistema FM200',            bg: '#6b0202',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
-  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
+  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '6px', text: 'E',  tc: '#fff',    scale: true  },
   { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
   { id: 'eeaa',            label: 'Sistema Climatización',    bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'FM', tc: '#fff',    scale: false },
 ];
@@ -210,7 +210,7 @@ function renderSheetGrid(gridData) {
           var top = cd.norte !== undefined ? cd.norte : 5, bottom = cd.sur !== undefined ? cd.sur : 5;
           var left = cd.oeste !== undefined ? cd.oeste : 5, right = cd.este !== undefined ? cd.este : 5;
           baseHtml = '<div style="position:absolute;top:' + top + '%;bottom:' + bottom + '%;left:' + left + '%;right:' + right + '%;'
-                   + 'background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + (tool.scale ? '50%' : tool.br) + ';'
+                   + 'background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + tool.br + ';'
                    + 'display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:' + tool.tc + ';z-index:10;pointer-events:none;'
                    + (tool.scale ? 'transform:scale(0.75);' : '') + '">' + tool.text + '</div>';
         }
@@ -219,7 +219,12 @@ function renderSheetGrid(gridData) {
           for (var oi = 0; oi < OVERLAY_TYPES.length; oi++) { if (OVERLAY_TYPES[oi].id === cd.overlay) { ovl = OVERLAY_TYPES[oi]; break; } }
           if (ovl) {
             usedTypes[cd.overlay] = ovl;
-            ovlHtml = '<div style="position:absolute;top:0;bottom:0;left:0;right:0;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:12px;color:' + ovl.tc + ';z-index:20;pointer-events:none;">' + ovl.text + '</div>';
+            var ovlT = cd.ovlN !== undefined ? cd.ovlN : 0;
+            var ovlB = cd.ovlS !== undefined ? cd.ovlS : 0;
+            var ovlL = cd.ovlO !== undefined ? cd.ovlO : 0;
+            var ovlR = cd.ovlE !== undefined ? cd.ovlE : 0;
+            var rotS = (cd.overlay === 'puerta' && cd.rot) ? 'transform:rotate(' + cd.rot + 'deg);transform-origin:center;' : '';
+            ovlHtml = '<div style="position:absolute;top:' + ovlT + '%;bottom:' + ovlB + '%;left:' + ovlL + '%;right:' + ovlR + '%;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:12px;color:' + ovl.tc + ';z-index:20;pointer-events:none;' + rotS + '">' + ovl.text + '</div>';
           }
         }
         h += cellOpen + baseHtml + ovlHtml
@@ -251,7 +256,7 @@ function renderSheetGrid(gridData) {
       var tool = usedTypes[k];
       var item = document.createElement('div');
       item.style.cssText = 'display:flex; align-items:center; gap:7px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:5px 10px;';
-      item.innerHTML = '<div style="width:20px;height:20px;flex-shrink:0;background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + (tool.scale ? '50%' : tool.br) + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:' + tool.tc + ';">' + tool.text + '</div>'
+      item.innerHTML = '<div style="width:20px;height:20px;flex-shrink:0;background:' + tool.bg + ';border:' + tool.border + ';border-radius:' + tool.br + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:' + tool.tc + ';">' + tool.text + '</div>'
                      + '<span style="font-size:12px;font-weight:600;color:#374151;">' + tool.label + '</span>';
       legendItems.appendChild(item);
     });
