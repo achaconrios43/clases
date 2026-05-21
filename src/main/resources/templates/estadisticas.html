@@ -207,18 +207,20 @@
                             <div class="text-xs opacity-90 mt-1">Promedio</div>
                         </div>
                         <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
-                            <div class="text-2xl font-extrabold text-blue-600" th:text="${#numbers.formatDecimal(resumenTempDiario.minima, 1, 1) + '°'}">–</div>
-                            <div class="text-xs text-gray-500 mt-1">Mínima</div>
-                        </div>
-                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
-                            <div class="text-2xl font-extrabold text-red-600" th:text="${#numbers.formatDecimal(resumenTempDiario.maxima, 1, 1) + '°'}">–</div>
-                            <div class="text-xs text-gray-500 mt-1">Máxima</div>
+                            <div class="text-2xl font-extrabold text-blue-600" th:text="${resumenTempDiario.totalPuntos}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Puntos configurados</div>
                         </div>
                         <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
                             <div class="text-2xl font-extrabold"
-                                 th:classappend="${resumenTempDiario.alertas > 0} ? 'text-red-600' : 'text-green-600'"
-                                 th:text="${resumenTempDiario.alertas}">0</div>
-                            <div class="text-xs text-gray-500 mt-1">Alertas</div>
+                                 th:classappend="${resumenTempDiario.puntosEnAlerta > 0} ? 'text-red-600' : 'text-green-600'"
+                                 th:text="${resumenTempDiario.puntosEnAlerta}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Puntos en alerta</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold"
+                                 th:classappend="${resumenTempDiario.estadoGeneral == 'ALERTA'} ? 'text-red-600' : 'text-green-600'"
+                                 th:text="${resumenTempDiario.estadoGeneral}">OK</div>
+                            <div class="text-xs text-gray-500 mt-1">Estado general</div>
                         </div>
                     </div>
                     <div th:if="${resumenTempDiario == null}" class="bg-gray-50 rounded-xl p-8 text-center text-gray-400">
@@ -271,43 +273,96 @@
                 </div>
 
                 <!-- ── Registros activos del día ── -->
-                <div th:if="${registrosActivosHoy != null and !#lists.isEmpty(registrosActivosHoy)}" class="mb-8">
+                <div class="mb-8">
                     <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
                         <span class="bg-green-100 text-green-700 rounded-lg px-3 py-1 text-sm">
-                            <i class="fas fa-id-badge mr-1"></i>Registros activos – Hoy
+                            <i class="fas fa-list mr-1"></i>Registros activos – Hoy
+                        </span>
+                        <span class="text-xs font-normal text-gray-400">
+                            🟢 A tiempo &nbsp;·&nbsp; 🟡 Próximo a vencer (&le;30 min) &nbsp;·&nbsp; 🔴 Fuera de horario
                         </span>
                     </h2>
+                    <div class="flex flex-wrap gap-2 mb-3 text-xs">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
+                            <i class="fas fa-calendar-alt mr-1"></i> Programación actividad
+                        </span>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-medium">
+                            <i class="fas fa-ticket-alt mr-1"></i> Horario Remedy
+                        </span>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">
+                            <i class="fas fa-clock mr-1"></i> Sin gestión / Horario ficticio
+                        </span>
+                    </div>
                     <div class="bg-white rounded-xl shadow overflow-hidden">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm">
-                                <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-2 text-left">Ticket</th>
-                                        <th class="px-4 py-2 text-left">Técnico</th>
-                                        <th class="px-4 py-2 text-left">Empresa</th>
-                                        <th class="px-4 py-2 text-left">Sala</th>
-                                        <th class="px-4 py-2 text-left">Ingreso</th>
-                                        <th class="px-4 py-2 text-center">Estado acceso</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alerta</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Técnico</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sala</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entrada</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horario autorizado</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr th:each="r : ${registrosActivosHoy}"
-                                        class="border-t border-gray-50 table-row-hover">
-                                        <td class="px-4 py-2 font-mono text-xs text-blue-700" th:text="${r.numeroTicket}">–</td>
-                                        <td class="px-4 py-2 font-medium" th:text="${r.nombreTecnico}">–</td>
-                                        <td class="px-4 py-2 text-gray-600" th:text="${r.empresa}">–</td>
-                                        <td class="px-4 py-2 text-gray-600" th:text="${r.salaRemedy}">–</td>
-                                        <td class="px-4 py-2 text-gray-500"
-                                            th:text="${r.fechaIngreso != null ? #temporals.format(r.fechaIngreso,'HH:mm') : '—'}">–</td>
-                                        <td class="px-4 py-2 text-center">
-                                            <span th:if="${r.estadoGestion != null}"
-                                                  class="text-xs px-2 py-0.5 rounded-full font-semibold"
-                                                  th:classappend="${r.estadoGestion == 'Aprobada'} ? 'bg-green-100 text-green-700' :
-                                                                   (${r.estadoGestion == 'Rechazada'} ? 'bg-red-100 text-red-700' :
-                                                                    'bg-yellow-100 text-yellow-700')"
-                                                  th:text="${r.estadoGestion}">–</span>
-                                            <span th:if="${r.estadoGestion == null}"
-                                                  class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Sin gestión</span>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr th:if="${registrosActivosHoy == null or #lists.isEmpty(registrosActivosHoy)}">
+                                        <td colspan="8" class="px-4 py-10 text-center text-gray-500">
+                                            <i class="fas fa-inbox text-4xl mb-2 block text-gray-300"></i>
+                                            No hay registros activos para hoy
+                                        </td>
+                                    </tr>
+                                    <tr th:each="reg : ${registrosActivosHoy}"
+                                        th:classappend="${reg.estadoAlerta == 'VENCIDO'} ? 'bg-red-50' : (${reg.estadoAlerta == 'PROXIMO'} ? 'bg-yellow-50' : '')">
+                                        <td class="px-3 py-3 whitespace-nowrap">
+                                            <span th:if="${reg.estadoAlerta == 'VENCIDO'}" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">🔴 VENCIDO</span>
+                                            <span th:if="${reg.estadoAlerta == 'PROXIMO'}" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">🟡 PRÓXIMO</span>
+                                            <span th:if="${reg.estadoAlerta == 'OK'}" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">🟢 A tiempo</span>
+                                            <span th:if="${reg.estadoAlerta == 'SIN_LIMITE'}" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">⬜ Sin límite</span>
+                                        </td>
+                                        <td class="px-3 py-3 font-medium text-blue-600 font-mono text-xs" th:text="${reg.numeroTicket}">-</td>
+                                        <td class="px-3 py-3" th:text="${reg.nombreTecnico}">-</td>
+                                        <td class="px-3 py-3 text-gray-600" th:text="${reg.empresaContratista}">-</td>
+                                        <td class="px-3 py-3 text-gray-600" th:text="${reg.salaIngresa}">-</td>
+                                        <td class="px-3 py-3 text-gray-700" th:text="${reg.horaInicio}">-</td>
+                                        <td class="px-3 py-3">
+                                            <div th:if="${reg.tipoAlerta == 'ACTIVIDAD'}" class="text-xs">
+                                                <span class="inline-flex items-center text-blue-700 font-semibold mb-1"><i class="fas fa-calendar-alt mr-1"></i> Programación</span><br>
+                                                <span class="text-gray-600" th:text="${reg.fechaInicioActividad}">-</span>
+                                                <span class="text-gray-600" th:text="${reg.horaInicioActividad}">-</span>
+                                                <span class="mx-1 text-gray-400">→</span>
+                                                <span th:classappend="${reg.estadoAlerta == 'VENCIDO'} ? 'text-red-700 font-bold' : (${reg.estadoAlerta == 'PROXIMO'} ? 'text-yellow-700 font-bold' : 'text-gray-700')">
+                                                    <span th:text="${reg.fechaTerminoActividad}">-</span>
+                                                    <span th:text="${reg.horaTerminoActividad}">-</span>
+                                                </span>
+                                            </div>
+                                            <div th:if="${reg.tipoAlerta == 'REMEDY'}" class="text-xs">
+                                                <span class="inline-flex items-center text-purple-700 font-semibold mb-1"><i class="fas fa-ticket-alt mr-1"></i> Remedy</span><br>
+                                                <span class="text-gray-600" th:text="${reg.fechaInicioRemedy}">-</span>
+                                                <span class="text-gray-600" th:text="${reg.horaInicioRemedy}">-</span>
+                                                <span class="mx-1 text-gray-400">→</span>
+                                                <span th:classappend="${reg.estadoAlerta == 'VENCIDO'} ? 'text-red-700 font-bold' : (${reg.estadoAlerta == 'PROXIMO'} ? 'text-yellow-700 font-bold' : 'text-gray-700')">
+                                                    <span th:text="${reg.fechaFinRemedy}">-</span>
+                                                    <span th:text="${reg.horaFinRemedy}">-</span>
+                                                </span>
+                                            </div>
+                                            <div th:if="${reg.tipoAlerta == 'FICTICIO'}" class="text-xs">
+                                                <span class="inline-flex items-center text-gray-600 font-semibold mb-1"><i class="fas fa-clock mr-1"></i> Ficticio (sin gestión)</span><br>
+                                                <span class="text-gray-500">Salida estimada:</span>
+                                                <span th:classappend="${reg.estadoAlerta == 'VENCIDO'} ? 'text-red-700 font-bold' : (${reg.estadoAlerta == 'PROXIMO'} ? 'text-yellow-700 font-bold' : 'text-gray-700')">
+                                                    <span th:text="${reg.fechaFinFicticia}">-</span>
+                                                    <span th:text="${reg.horaFinFicticia}">-</span>
+                                                </span>
+                                            </div>
+                                            <span th:if="${reg.tipoAlerta == 'SIN_LIMITE'}" class="text-xs text-gray-400 italic">Sin horario registrado</span>
+                                        </td>
+                                        <td class="px-3 py-3">
+                                            <span class="px-2 py-1 text-xs rounded-full font-medium"
+                                                  th:classappend="${reg.tipoTicket == 'CRQ'} ? 'bg-blue-100 text-blue-800' : (${reg.tipoTicket == 'INC'} ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800')"
+                                                  th:text="${reg.tipoTicket}">-</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -404,6 +459,92 @@
                     </div>
                 </div>
 
+                <!-- ── Gráficos del mes ── -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-700 rounded-lg px-3 py-1 text-sm">
+                            <i class="fas fa-chart-pie mr-1"></i>Distribución y análisis – Mes
+                        </span>
+                    </h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Tipos de tickets -->
+                        <div class="bg-white rounded-xl shadow p-5">
+                            <div class="font-semibold text-sm text-gray-700 mb-3">
+                                <i class="fas fa-chart-pie mr-1 text-blue-400"></i>Tipos de tickets
+                            </div>
+                            <div style="position:relative;height:220px;">
+                                <canvas id="tiposTicketsChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Salas TI vs RED -->
+                        <div class="bg-white rounded-xl shadow p-5">
+                            <div class="font-semibold text-sm text-gray-700 mb-3">
+                                <i class="fas fa-server mr-1 text-purple-400"></i>Ingresos por sala
+                            </div>
+                            <div style="position:relative;height:220px;">
+                                <canvas id="salasChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Gestiones -->
+                        <div class="bg-white rounded-xl shadow p-5">
+                            <div class="font-semibold text-sm text-gray-700 mb-3">
+                                <i class="fas fa-tasks mr-1 text-green-400"></i>Estado de gestiones
+                            </div>
+                            <div style="position:relative;height:220px;">
+                                <canvas id="gestionesChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Resumen ejecutivo -->
+                        <div class="bg-white rounded-xl shadow p-5">
+                            <div class="font-semibold text-sm text-gray-700 mb-3">
+                                <i class="fas fa-table mr-1 text-gray-400"></i>Resumen ejecutivo
+                            </div>
+                            <table class="min-w-full text-sm">
+                                <thead class="text-xs text-gray-500 uppercase border-b border-gray-100">
+                                    <tr>
+                                        <th class="py-2 text-left">Indicador</th>
+                                        <th class="py-2 text-right">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    <tr>
+                                        <td class="py-2 text-gray-700">CRQ</td>
+                                        <td class="py-2 text-right font-bold text-blue-700" th:text="${cantidadCRQ}">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 text-gray-700">INC</td>
+                                        <td class="py-2 text-right font-bold text-orange-600" th:text="${cantidadINC}">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 text-gray-700">Inspección / Ronda</td>
+                                        <td class="py-2 text-right font-bold text-teal-600" th:text="${cantidadInspeccionRonda}">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 text-gray-700">Salas TI</td>
+                                        <td class="py-2 text-right font-bold text-blue-800" th:text="${salasTI}">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 text-gray-700">Salas RED</td>
+                                        <td class="py-2 text-right font-bold text-green-700" th:text="${salasRED}">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 text-gray-700">Tickets rechazados</td>
+                                        <td class="py-2 text-right font-bold text-red-600" th:text="${ticketsRechazadosMes}">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 text-gray-700">Tickets devueltos</td>
+                                        <td class="py-2 text-right font-bold text-orange-500" th:text="${ticketsDevueltosMes}">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 text-gray-700">Pendientes de cierre</td>
+                                        <td class="py-2 text-right font-bold text-yellow-600" th:text="${ticketsPendientesCierre}">0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ── Temperatura del mes ── -->
                 <div class="mb-8">
                     <h2 class="text-lg font-bold text-dcim-dark mb-4 flex items-center gap-2">
@@ -418,18 +559,20 @@
                             <div class="text-xs opacity-90 mt-1">Promedio mensual</div>
                         </div>
                         <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
-                            <div class="text-2xl font-extrabold text-blue-600" th:text="${#numbers.formatDecimal(resumenTempMensual.minima, 1, 1) + '°'}">–</div>
-                            <div class="text-xs text-gray-500 mt-1">Mínima</div>
-                        </div>
-                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
-                            <div class="text-2xl font-extrabold text-red-600" th:text="${#numbers.formatDecimal(resumenTempMensual.maxima, 1, 1) + '°'}">–</div>
-                            <div class="text-xs text-gray-500 mt-1">Máxima</div>
+                            <div class="text-2xl font-extrabold text-blue-600" th:text="${resumenTempMensual.totalPuntos}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Puntos activos</div>
                         </div>
                         <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
                             <div class="text-2xl font-extrabold"
-                                 th:classappend="${resumenTempMensual.alertas > 0} ? 'text-red-600' : 'text-green-600'"
-                                 th:text="${resumenTempMensual.alertas}">0</div>
-                            <div class="text-xs text-gray-500 mt-1">Alertas totales</div>
+                                 th:classappend="${resumenTempMensual.totalAlertasPeriodo > 0} ? 'text-red-600' : 'text-green-600'"
+                                 th:text="${resumenTempMensual.totalAlertasPeriodo}">0</div>
+                            <div class="text-xs text-gray-500 mt-1">Alertas del mes</div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl border border-gray-100 shadow p-4 text-center">
+                            <div class="text-2xl font-extrabold"
+                                 th:classappend="${resumenTempMensual.estadoGeneral == 'ALERTA'} ? 'text-red-600' : 'text-green-600'"
+                                 th:text="${resumenTempMensual.estadoGeneral}">OK</div>
+                            <div class="text-xs text-gray-500 mt-1">Estado</div>
                         </div>
                     </div>
                     <div th:if="${resumenTempMensual == null}" class="bg-gray-50 rounded-xl p-8 text-center text-gray-400 mb-6">
@@ -455,15 +598,81 @@
     </div><!-- /container -->
 
     <!-- ══ CHART.JS SCRIPT ══ -->
-    <div th:if="${modo == 'mensual' and tempLabels != null and !#lists.isEmpty(tempLabels)}">
+    <div th:if="${modo == 'mensual'}">
         <script th:inline="javascript">
             /*<![CDATA[*/
+            const cantidadCRQ       = /*[[${cantidadCRQ}]]*/ 0;
+            const cantidadINC       = /*[[${cantidadINC}]]*/ 0;
+            const cantidadInspeccion= /*[[${cantidadInspeccionRonda}]]*/ 0;
+            const salasTI           = /*[[${salasTI}]]*/ 0;
+            const salasRED          = /*[[${salasRED}]]*/ 0;
+            const ticketsAprobados  = /*[[${ticketsAprobadosMes}]]*/ 0;
+            const ticketsRechazados = /*[[${ticketsRechazadosMes}]]*/ 0;
+            const ticketsDevueltos  = /*[[${ticketsDevueltosMes}]]*/ 0;
+            const ticketsPendientes = /*[[${ticketsPendientesAprobacion}]]*/ 0;
+
+            // Gráfico de tipos de tickets (torta)
+            const elTipos = document.getElementById('tiposTicketsChart');
+            if (elTipos) new Chart(elTipos.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: ['CRQ', 'INC', 'Inspección/Ronda'],
+                    datasets: [{
+                        data: [cantidadCRQ, cantidadINC, cantidadInspeccion],
+                        backgroundColor: ['#3B82F6', '#EF4444', '#F59E0B']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Gráfico de salas (barras)
+            const elSalas = document.getElementById('salasChart');
+            if (elSalas) new Chart(elSalas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Salas TI', 'Salas RED'],
+                    datasets: [{
+                        label: 'Ingresos',
+                        data: [salasTI, salasRED],
+                        backgroundColor: ['#8B5CF6', '#6366F1']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Gráfico de gestiones (donut)
+            const elGestiones = document.getElementById('gestionesChart');
+            if (elGestiones) new Chart(elGestiones.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Aprobados', 'Rechazados', 'Devueltos', 'Pendientes'],
+                    datasets: [{
+                        data: [ticketsAprobados, ticketsRechazados, ticketsDevueltos, ticketsPendientes],
+                        backgroundColor: ['#10B981', '#EF4444', '#F97316', '#F59E0B']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Gráfico de temperatura lineal
             var labels  = /*[[${tempLabels}]]*/  [];
             var valores = /*[[${tempValores}]]*/ [];
             var numValores = valores.map(function(v) { return v === 'null' ? null : parseFloat(v); });
-
             var ctx = document.getElementById('tempChart');
-            if (ctx) {
+            if (ctx && labels.length > 0) {
                 new Chart(ctx, {
                     type: 'line',
                     data: {
