@@ -113,19 +113,19 @@
       <div id="moldBaseSection" style="display:flex; flex-direction:column; gap:10px;">
         <div>
           <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Norte (Arriba)</span><span id="moldNorteVal" style="color:#4338ca; font-weight:700;"></span></label>
-          <input type="range" id="moldNorte" min="-150" max="95" step="5" value="5" oninput="onMoldChange('norte', this.value)" style="width:100%; accent-color:#6366f1;">
+          <input type="range" id="moldNorte" min="-150" max="200" step="5" value="5" oninput="onMoldChange('norte', this.value)" style="width:100%; accent-color:#6366f1;">
         </div>
         <div>
           <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Sur (Abajo)</span><span id="moldSurVal" style="color:#4338ca; font-weight:700;"></span></label>
-          <input type="range" id="moldSur" min="-150" max="95" step="5" value="5" oninput="onMoldChange('sur', this.value)" style="width:100%; accent-color:#6366f1;">
+          <input type="range" id="moldSur" min="-150" max="200" step="5" value="5" oninput="onMoldChange('sur', this.value)" style="width:100%; accent-color:#6366f1;">
         </div>
         <div>
           <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Oeste (Izq)</span><span id="moldOesteVal" style="color:#4338ca; font-weight:700;"></span></label>
-          <input type="range" id="moldOeste" min="-150" max="95" step="5" value="5" oninput="onMoldChange('oeste', this.value)" style="width:100%; accent-color:#6366f1;">
+          <input type="range" id="moldOeste" min="-150" max="200" step="5" value="5" oninput="onMoldChange('oeste', this.value)" style="width:100%; accent-color:#6366f1;">
         </div>
         <div>
           <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Este (Der)</span><span id="moldEsteVal" style="color:#4338ca; font-weight:700;"></span></label>
-          <input type="range" id="moldEste" min="-150" max="95" step="5" value="5" oninput="onMoldChange('este', this.value)" style="width:100%; accent-color:#6366f1;">
+          <input type="range" id="moldEste" min="-150" max="200" step="5" value="5" oninput="onMoldChange('este', this.value)" style="width:100%; accent-color:#6366f1;">
         </div>
       </div>
       <div id="moldOverlaySection" style="display:none; margin-top:10px; border-top:1px solid #c7d2fe; padding-top:10px;">
@@ -133,19 +133,19 @@
         <div style="display:flex; flex-direction:column; gap:8px;">
           <div>
             <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Norte</span><span id="moldOvlNVal" style="color:#7c3aed; font-weight:700;"></span></label>
-            <input type="range" id="moldOvlN" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlN', this.value)" style="width:100%; accent-color:#7c3aed;">
+            <input type="range" id="moldOvlN" min="-150" max="200" step="5" value="0" oninput="onMoldChange('ovlN', this.value)" style="width:100%; accent-color:#7c3aed;">
           </div>
           <div>
             <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Sur</span><span id="moldOvlSVal" style="color:#7c3aed; font-weight:700;"></span></label>
-            <input type="range" id="moldOvlS" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlS', this.value)" style="width:100%; accent-color:#7c3aed;">
+            <input type="range" id="moldOvlS" min="-150" max="200" step="5" value="0" oninput="onMoldChange('ovlS', this.value)" style="width:100%; accent-color:#7c3aed;">
           </div>
           <div>
             <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Oeste</span><span id="moldOvlOVal" style="color:#7c3aed; font-weight:700;"></span></label>
-            <input type="range" id="moldOvlO" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlO', this.value)" style="width:100%; accent-color:#7c3aed;">
+            <input type="range" id="moldOvlO" min="-150" max="200" step="5" value="0" oninput="onMoldChange('ovlO', this.value)" style="width:100%; accent-color:#7c3aed;">
           </div>
           <div>
             <label style="font-size:11px; font-weight:600; color:#374151; display:flex; justify-content:space-between; margin-bottom:3px;"><span>Este</span><span id="moldOvlEVal" style="color:#7c3aed; font-weight:700;"></span></label>
-            <input type="range" id="moldOvlE" min="-150" max="95" step="5" value="0" oninput="onMoldChange('ovlE', this.value)" style="width:100%; accent-color:#7c3aed;">
+            <input type="range" id="moldOvlE" min="-150" max="200" step="5" value="0" oninput="onMoldChange('ovlE', this.value)" style="width:100%; accent-color:#7c3aed;">
           </div>
         </div>
       </div>
@@ -202,8 +202,8 @@ const ITEM_TYPES = [
   { id: 'libre',           label: 'Posición libre',           bg: '#dcfce7',     border: '2px solid #22c55e',    br: '3px', text: '',   tc: '',        scale: false },
   { id: 'no_disponible',   label: 'No disponible',            bg: '#9ca3af',     border: '1px solid #6b7280',    br: '3px', text: '',   tc: '',        scale: false },
   { id: 'extintor',        label: 'Extintor portátil',        bg: '#ef4444',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
-  { id: 'fms200',          label: 'Sistema FM200',            bg: '#6b0202',     border: '1px solid #dc2626',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
-  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '4px', text: 'E',  tc: '#fff',    scale: false },
+  { id: 'fms200',          label: 'Sistema FM200',            bg: '#6b0202',     border: '1px solid #dc2626',    br: '50%', text: 'FM', tc: '#fff',    scale: true  },
+  { id: 'tablero',         label: 'Tablero Electrico',        bg: '#79d7ee',     border: '1px solid #3b81eb',    br: '50%', text: 'E',  tc: '#fff',    scale: true  },
   { id: 'rack_desocupado', label: 'Rack desocupado',          bg: '#fef08a',     border: '2px dashed #eab308',   br: '3px', text: '',   tc: '',        scale: false },
   { id: 'eeaa',            label: 'Sistema Climatización',     bg: '#f97316',     border: '1px solid #ea580c',    br: '3px', text: 'EEAA', tc: '#fff',  scale: false },
   { id: 'borrar',          label: 'Goma de borrar (Quitar)',  bg: 'transparent', border: '2px dashed #d1d5db',   br: '3px', text: '✕',  tc: '#9ca3af', scale: false },
