@@ -36,23 +36,62 @@
 
   <!-- Search + Filters -->
   <div class="dcim-card" style="padding:18px; margin-bottom:20px;">
-    <form method="GET" action="/inventario/buscar" style="display:flex; gap:10px; margin-bottom:12px;">
-      <input type="text" name="search" placeholder="Buscar por serie, tag, cliente, estado..."
-             style="flex:1; padding:9px 14px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; min-width:0;">
-      <button type="submit" style="padding:9px 22px; background:linear-gradient(90deg,#0f4c75,#1b6ca8); color:#fff; font-weight:700; font-size:13px; border:none; border-radius:8px; cursor:pointer;">
-        🔍 Buscar
-      </button>
+    <form method="GET" action="/inventario/filtrar" style="display:flex; flex-direction:column; gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:10px;">
+        <select id="sitioFiltro" name="sitio" onchange="filtrarSalasInventario()"
+                style="padding:9px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; min-width:0;">
+          <option value="">Seleccione sitio</option>
+          <option th:each="sitioItem : ${sitiosCatalogo}"
+                  th:value="${sitioItem.nombre}"
+                  th:text="${sitioItem.nombre}"
+                  th:selected="${sitioSeleccionado == sitioItem.nombre}"></option>
+        </select>
+        <select id="salaFiltro" name="sala"
+                style="padding:9px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; min-width:0;">
+          <option value="">Seleccione sala</option>
+          <option th:if="${salaSeleccionada != null and salaSeleccionada != ''}"
+                  th:value="${salaSeleccionada}"
+                  th:text="${salaSeleccionada}"
+                  selected></option>
+        </select>
+        <button type="submit" style="padding:9px 22px; background:linear-gradient(90deg,#0f4c75,#1b6ca8); color:#fff; font-weight:700; font-size:13px; border:none; border-radius:8px; cursor:pointer;">
+          🔍 Buscar
+        </button>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <span style="font-size:12px; font-weight:700; color:#5b667a;">Estado:</span>
+        <a th:if="${sitioSeleccionado != null and sitioSeleccionado != '' and salaSeleccionada != null and salaSeleccionada != ''}"
+           th:href="@{/inventario/filtrar(sitio=${sitioSeleccionado},sala=${salaSeleccionada})}"
+           style="padding:5px 14px; background:#e5e7eb; border-radius:99px; font-size:12px; font-weight:700; color:#374151; text-decoration:none;">Todos</a>
+        <a th:if="${sitioSeleccionado != null and sitioSeleccionado != '' and salaSeleccionada != null and salaSeleccionada != ''}"
+           th:href="@{/inventario/filtrar(sitio=${sitioSeleccionado},sala=${salaSeleccionada},estado='Operativo')}"
+           style="padding:5px 14px; background:#d1fae5; border-radius:99px; font-size:12px; font-weight:700; color:#065f46; text-decoration:none;">Operativo</a>
+        <a th:if="${sitioSeleccionado != null and sitioSeleccionado != '' and salaSeleccionada != null and salaSeleccionada != ''}"
+           th:href="@{/inventario/filtrar(sitio=${sitioSeleccionado},sala=${salaSeleccionada},estado='Apagado')}"
+           style="padding:5px 14px; background:#e5e7eb; border-radius:99px; font-size:12px; font-weight:700; color:#374151; text-decoration:none;">Apagado</a>
+        <a th:if="${sitioSeleccionado != null and sitioSeleccionado != '' and salaSeleccionada != null and salaSeleccionada != ''}"
+           th:href="@{/inventario/filtrar(sitio=${sitioSeleccionado},sala=${salaSeleccionada},estado='Alarmado')}"
+           style="padding:5px 14px; background:#fee2e2; border-radius:99px; font-size:12px; font-weight:700; color:#7f1d1d; text-decoration:none;">Alarmado</a>
+        <a th:if="${sitioSeleccionado != null and sitioSeleccionado != '' and salaSeleccionada != null and salaSeleccionada != ''}"
+           th:href="@{/inventario/filtrar(sitio=${sitioSeleccionado},sala=${salaSeleccionada},estado='STAND BY')}"
+           style="padding:5px 14px; background:#fef3c7; border-radius:99px; font-size:12px; font-weight:700; color:#92400e; text-decoration:none;">Stand By</a>
+        <a th:if="${sitioSeleccionado != null and sitioSeleccionado != '' and salaSeleccionada != null and salaSeleccionada != ''}"
+           th:href="@{/inventario/filtrar(sitio=${sitioSeleccionado},sala=${salaSeleccionada},estado='UR Ocupada')}"
+           style="padding:5px 14px; background:#dbeafe; border-radius:99px; font-size:12px; font-weight:700; color:#1d4ed8; text-decoration:none;">UR Ocupada</a>
+        <a th:if="${sitioSeleccionado != null and sitioSeleccionado != '' and salaSeleccionada != null and salaSeleccionada != ''}"
+           th:href="@{/inventario/filtrar(sitio=${sitioSeleccionado},sala=${salaSeleccionada},estado='Retirado')}"
+           style="padding:5px 14px; background:#fee2e2; border-radius:99px; font-size:12px; font-weight:700; color:#7f1d1d; text-decoration:none;">Retirado</a>
+      </div>
     </form>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <a href="/inventario" style="padding:5px 14px; background:#e5e7eb; border-radius:99px; font-size:12px; font-weight:700; color:#374151; text-decoration:none;">Todos</a>
-      <a href="/inventario/filtrar/estado/Activo" style="padding:5px 14px; background:#d1fae5; border-radius:99px; font-size:12px; font-weight:700; color:#065f46; text-decoration:none;">Activo</a>
-      <a href="/inventario/filtrar/estado/Inactivo" style="padding:5px 14px; background:#fee2e2; border-radius:99px; font-size:12px; font-weight:700; color:#7f1d1d; text-decoration:none;">Inactivo</a>
-      <a href="/inventario/filtrar/estado/En%20Mantenimiento" style="padding:5px 14px; background:#fef3c7; border-radius:99px; font-size:12px; font-weight:700; color:#92400e; text-decoration:none;">En Mantenimiento</a>
+
+    <div th:if="${filtro}" style="font-size:12px; color:#5b667a; font-weight:600;">
+      <span th:text="${filtro}"></span>
     </div>
   </div>
 
   <!-- Toggle Vista -->
-  <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+  <div th:if="${filtroAplicado}" style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
     <span style="font-size:12px; font-weight:700; color:#5b667a;">Vista:</span>
     <button id="btnLista" onclick="setVista('lista')"
             style="padding:7px 18px; background:linear-gradient(90deg,#0f4c75,#1b6ca8); color:#fff; border:none; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer;">📋 Lista</button>
@@ -60,8 +99,12 @@
             style="padding:7px 18px; background:#e5e7eb; color:#374151; border:none; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer;">🗄️ Vista Racks</button>
   </div>
 
+  <div th:if="${!filtroAplicado}" class="dcim-card" style="padding:20px; margin-bottom:16px; border:1px solid #bfdbfe; background:#eff6ff;">
+    <span style="font-size:13px; color:#1e3a8a; font-weight:700;">Seleccione primero sitio y sala para ver la vista de lista y la vista de racks.</span>
+  </div>
+
   <!-- Vista Lista -->
-  <div id="vistaLista">
+  <div id="vistaLista" th:if="${filtroAplicado}">
 
   <!-- Table card -->
   <div class="dcim-card" style="overflow:hidden;">
@@ -180,7 +223,7 @@
   </div><!-- /vistaLista -->
 
   <!-- Vista Racks -->
-  <div id="vistaRacks" style="display:none;">
+  <div id="vistaRacks" th:if="${filtroAplicado}" style="display:none;">
     <div class="dcim-card" style="overflow:visible;">
       <div class="card-band" style="background:linear-gradient(90deg,#0f4c75,#1b6ca8)"></div>
       <div style="padding:20px 20px 8px;">
@@ -208,6 +251,27 @@
 
 <script th:inline="javascript">
 /*<![CDATA[*/
+
+const salasPorSitio = /*[[${salasPorSitio}]]*/ {};
+
+function filtrarSalasInventario() {
+  const sitioSelect = document.getElementById('sitioFiltro');
+  const salaSelect = document.getElementById('salaFiltro');
+  if (!sitioSelect || !salaSelect) return;
+
+  const sitio = sitioSelect.value || '';
+  const salaActual = salaSelect.value || '';
+  const salas = salasPorSitio[sitio] || [];
+
+  salaSelect.innerHTML = '<option value="">Seleccione sala</option>';
+  salas.forEach(function (sala) {
+    const opt = document.createElement('option');
+    opt.value = sala;
+    opt.textContent = sala;
+    if (sala === salaActual) opt.selected = true;
+    salaSelect.appendChild(opt);
+  });
+}
 
 /* ── Build raw data from Thymeleaf ── */
 const invRaw = [];
@@ -452,6 +516,10 @@ function setVista(vista) {
     renderRackGrid();
   }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  filtrarSalasInventario();
+});
 /*]]>*/
 </script>
 </body>

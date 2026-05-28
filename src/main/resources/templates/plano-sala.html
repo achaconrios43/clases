@@ -218,6 +218,7 @@ const ITEM_TYPES = [
 const OVERLAY_TYPES = [
   { id: 'muro',              label: 'Muro / Pared',           bg: 'repeating-linear-gradient(45deg,#374151 0,#374151 5px,#1f2937 5px,#1f2937 10px)', border: '2px solid #111827', br: '0',   text: '',   tc: '#fff'    },
   { id: 'puerta',            label: 'Puerta abierta',          bg: 'rgba(248,250,252,0.93)',  border: '3px solid #0f172a', br: '0 0 50% 0', text: '↗', tc: '#0f172a' },
+  { id: 'puerta_doble',      label: 'Puerta doble',            bg: 'rgba(248,250,252,0.93)',  border: '3px double #0f172a', br: '0', text: '⇄', tc: '#0f172a' },
   { id: 'escalerilla',       label: 'Escalerilla de cable',    bg: 'repeating-linear-gradient(0deg,#78350f 0,#78350f 3px,rgba(254,215,170,0.28) 3px,rgba(254,215,170,0.28) 12px)', border: '2px solid #92400e', br: '2px', text: '', tc: '#fff' },
   { id: 'bajo_piso_azul',    label: 'Bajo Piso — Azul',        bg: 'rgba(59,130,246,0.42)',   border: '1px solid #2563eb',  br: '2px', text: '▣',  tc: '#eff6ff' },
   { id: 'bajo_piso_rojo',    label: 'Bajo Piso — Rojo',        bg: 'rgba(239,68,68,0.42)',    border: '1px solid #dc2626',  br: '2px', text: '▣',  tc: '#fef2f2' },
@@ -225,7 +226,7 @@ const OVERLAY_TYPES = [
   { id: 'bajo_piso_naranja', label: 'Bajo Piso — Naranja',     bg: 'rgba(249,115,22,0.42)',   border: '1px solid #ea580c',  br: '2px', text: '▣',  tc: '#fff7ed' },
   { id: 'borrar_capa',       label: 'Borrar sólo capa infra.', bg: 'transparent',             border: '2px dashed #f59e0b', br: '3px', text: '○',  tc: '#d97706' },
 ];
-const OVERLAY_IDS = new Set(['muro','puerta','escalerilla','bajo_piso_azul','bajo_piso_rojo','bajo_piso_verde','bajo_piso_naranja']);
+const OVERLAY_IDS = new Set(['muro','puerta','puerta_doble','escalerilla','bajo_piso_azul','bajo_piso_rojo','bajo_piso_verde','bajo_piso_naranja']);
 
 // ── State ────────────────────────────────────────
 let gridData      = {};
@@ -596,7 +597,7 @@ function cellInnerHTML (cd, isSel) {
       var ovlB = cd.ovlS !== undefined ? cd.ovlS : 0;
       var ovlL = cd.ovlO !== undefined ? cd.ovlO : 0;
       var ovlR = cd.ovlE !== undefined ? cd.ovlE : 0;
-      var rotStyle = (cd.overlay === 'puerta' && cd.rot) ? 'transform:rotate(' + cd.rot + 'deg);transform-origin:center;' : '';
+      var rotStyle = ((cd.overlay === 'puerta' || cd.overlay === 'puerta_doble') && cd.rot) ? 'transform:rotate(' + cd.rot + 'deg);transform-origin:center;' : '';
       result += '<div style="position:absolute;top:' + ovlT + '%;bottom:' + ovlB + '%;left:' + ovlL + '%;right:' + ovlR + '%;background:' + ovl.bg + ';border:' + ovl.border + ';border-radius:' + ovl.br + ';display:flex;align-items:center;justify-content:center;font-size:14px;color:' + ovl.tc + ';z-index:20;pointer-events:none;' + rotStyle + '">' + ovl.text + '</div>';
     }
   }
@@ -653,8 +654,8 @@ function handleTile (coord, isClick) {
   } else if (OVERLAY_IDS.has(activeTool)) {
     if (!gridData[coord]) gridData[coord] = { norte: 5, sur: 5, oeste: 5, este: 5 };
     gridData[coord].overlay = activeTool;
-    // Default door: centered, 80% size
-    if (activeTool === 'puerta' && gridData[coord].ovlN === undefined) {
+    // Default doors: centered, 80% size
+    if ((activeTool === 'puerta' || activeTool === 'puerta_doble') && gridData[coord].ovlN === undefined) {
       gridData[coord].ovlN = 10;
       gridData[coord].ovlS = 10;
       gridData[coord].ovlO = 10;
@@ -734,7 +735,7 @@ function updateMoldPanel () {
     document.getElementById('moldOvlEVal').textContent = Math.round(ovlE * 0.6) + ' cm';
     var rotSection = document.getElementById('moldRotSection');
     var ovlSliders  = document.getElementById('moldOverlaySliders');
-    if (d.overlay === 'puerta') {
+    if (d.overlay === 'puerta' || d.overlay === 'puerta_doble') {
       rotSection.style.display = 'block';
       ovlSliders.style.display = 'none';
       var rot = d.rot !== undefined ? d.rot : 0;

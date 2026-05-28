@@ -32,6 +32,14 @@ public interface InventarioRepository extends JpaRepository<Inventario, Long> {
            "LOWER(i.cliente) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(i.estado) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Inventario> buscar(@Param("search") String search);
+
+        @Query("SELECT i FROM Inventario i " +
+            "WHERE i.sitio = :sitio AND i.sala = :sala " +
+            "AND (:estado IS NULL OR :estado = '' OR i.estado = :estado) " +
+            "ORDER BY i.id ASC")
+        List<Inventario> findBySitioAndSalaAndEstado(@Param("sitio") String sitio,
+                                @Param("sala") String sala,
+                                @Param("estado") String estado);
     
     // Validar duplicados
     long countByNumeroSerie(String numeroSerie);

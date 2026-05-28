@@ -36,6 +36,9 @@ public class SecurityConfig {
     @Autowired
     private ViewerReadOnlyFilter viewerReadOnlyFilter;
 
+    @Autowired
+    private ModulosPermitidosFilter modulosPermitidosFilter;
+
     /**
      * Configuración de seguridad para API REST (aplicaciones móviles)
      * PRIORIDAD ALTA: Se procesa ANTES que filterChain
@@ -83,8 +86,8 @@ public class SecurityConfig {
                 // Dashboard: accesible por ADMIN, USER, VIEWER y CLIENTE
                 .requestMatchers("/dashboard/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
 
-                // Estadísticas: módulo principal para CLIENTE (accesible también por ADMIN y VIEWER)
-                .requestMatchers("/estadisticas/**", "/estadisticas").hasAnyRole("ADMIN", "VIEWER", "CLIENTE")
+                // Estadísticas: accesible por ADMIN, USER, VIEWER y CLIENTE (módulos restringen via ModulosPermitidosFilter)
+                .requestMatchers("/estadisticas/**", "/estadisticas").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
 
                 // Gestión de usuarios: solo ADMIN y USER
                 .requestMatchers("/user/**").hasAnyRole("ADMIN", "USER")
@@ -92,14 +95,17 @@ public class SecurityConfig {
                 // Salas: solo ADMIN
                 .requestMatchers("/salas", "/salas/**").hasRole("ADMIN")
 
-                // Módulos operativos — GET (solo lectura): accesible también por VIEWER
-                // El filtro ViewerReadOnlyFilter bloquea POST/DELETE/PUT para VIEWER
-                .requestMatchers(HttpMethod.GET, "/ingresoap/**", "/ingresoap").hasAnyRole("ADMIN", "USER", "VIEWER")
-                .requestMatchers(HttpMethod.GET, "/ingreso/**").hasAnyRole("ADMIN", "USER", "VIEWER")
-                .requestMatchers(HttpMethod.GET, "/gestion/**").hasAnyRole("ADMIN", "USER", "VIEWER")
-                .requestMatchers(HttpMethod.GET, "/inventario/**", "/inventario").hasAnyRole("ADMIN", "USER", "VIEWER")
-                .requestMatchers(HttpMethod.GET, "/temperaturas/**").hasAnyRole("ADMIN", "USER", "VIEWER")
-                .requestMatchers(HttpMethod.GET, "/plano-sala/**", "/plano-sala").hasAnyRole("ADMIN", "USER", "VIEWER")
+                // Módulos operativos — GET: accesible por VIEWER y CLIENTE (ModulosPermitidosFilter restringe por módulos asignados)
+                // ViewerReadOnlyFilter bloquea POST/DELETE/PUT para VIEWER
+                .requestMatchers(HttpMethod.GET, "/ingresoap/**", "/ingresoap").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/ingreso/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/gestion/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/inventario/**", "/inventario").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/layout-vertical/**", "/layout-vertical").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/temperaturas/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/plano-sala/**", "/plano-sala").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/plano-sala-plantillas/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/plano-sala-ver/**").hasAnyRole("ADMIN", "USER", "VIEWER", "CLIENTE")
 
                 // Módulos operativos — escritura (POST, PUT, DELETE): solo ADMIN y USER
                 .requestMatchers("/ingresoap/**", "/ingresoap").hasAnyRole("ADMIN", "USER")
@@ -113,8 +119,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
                 )
 
-            // Registrar el filtro VIEWER antes del filtro de autenticación
+            // Registrar filtros de restricción antes del filtro de autenticación
             .addFilterBefore(viewerReadOnlyFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(modulosPermitidosFilter, UsernamePasswordAuthenticationFilter.class)
 
             // CsrfTokenRequestAttributeHandler: expone _csrf como atributo no-lazy en Thymeleaf (Spring Security 6).
             .csrf(csrf -> csrf

@@ -31,22 +31,67 @@ public class InventarioController {
     @Autowired
     private TemperaturaService temperaturaService;
 
+        private void prepararVistaInventario(Model model,
+                         List<Inventario> items,
+                         String sitio,
+                         String sala,
+                         String estado,
+                         boolean filtroAplicado,
+                         String filtroTexto) {
+        model.addAttribute("inventarios", items);
+        model.addAttribute("total", items.size());
+        model.addAttribute("sitiosCatalogo", temperaturaService.listarSitiosActivos());
+        model.addAttribute("salasPorSitio", temperaturaService.obtenerMapaSalasPorSitio());
+        model.addAttribute("sitioSeleccionado", sitio);
+        model.addAttribute("salaSeleccionada", sala);
+        model.addAttribute("estadoSeleccionado", estado);
+        model.addAttribute("filtroAplicado", filtroAplicado);
+        model.addAttribute("filtro", filtroTexto);
+        }
+
     // Listar todos
     @GetMapping
     public String listar(Model model) {
-        List<Inventario> items = inventarioService.obtenerTodos();
-        model.addAttribute("inventarios", items);
-        model.addAttribute("total", items.size());
+        prepararVistaInventario(model, List.of(), null, null, null, false,
+            "Seleccione sitio y sala para consultar inventario.");
         return "inventario";
     }
+
+        // Filtrar por sitio + sala (+ estado opcional)
+        @GetMapping("/filtrar")
+        public String filtrarPorUbicacion(@RequestParam(required = false) String sitio,
+                          @RequestParam(required = false) String sala,
+                          @RequestParam(required = false) String estado,
+                          Model model) {
+        String sitioLimpio = sitio != null ? sitio.trim() : "";
+        String salaLimpia = sala != null ? sala.trim() : "";
+        String estadoLimpio = estado != null ? estado.trim() : "";
+
+        if (sitioLimpio.isEmpty() || salaLimpia.isEmpty()) {
+            prepararVistaInventario(model, List.of(), sitioLimpio, salaLimpia, estadoLimpio, false,
+                "Debe seleccionar sitio y sala para ver el inventario.");
+            return "inventario";
+        }
+
+        List<Inventario> items = inventarioService.obtenerPorSitioSalaYEstado(
+            sitioLimpio,
+            salaLimpia,
+            estadoLimpio.isEmpty() ? null : estadoLimpio);
+
+        String filtroTexto = "Sitio: " + sitioLimpio + " | Sala: " + salaLimpia
+            + (estadoLimpio.isEmpty() ? "" : " | Estado: " + estadoLimpio);
+
+        prepararVistaInventario(model, items, sitioLimpio, salaLimpia,
+            estadoLimpio, true, filtroTexto);
+        return "inventario";
+        }
 
     // Buscar
     @GetMapping("/buscar")
     public String buscar(@RequestParam("search") String search, Model model) {
         List<Inventario> items = inventarioService.buscar(search);
-        model.addAttribute("inventarios", items);
         model.addAttribute("search", search);
-        model.addAttribute("total", items.size());
+        prepararVistaInventario(model, items, null, null, null, true, "Búsqueda: " + search);
         return "inventario";
     }
 
@@ -130,9 +175,7 @@ public class InventarioController {
     @GetMapping("/filtrar/estado/{estado}")
     public String filtrarPorEstado(@PathVariable String estado, Model model) {
         List<Inventario> items = inventarioService.obtenerPorEstado(estado);
-        model.addAttribute("inventarios", items);
-        model.addAttribute("filtro", "Estado: " + estado);
-        model.addAttribute("total", items.size());
+        prepararVistaInventario(model, items, null, null, estado, true, "Estado: " + estado);
         return "inventario";
     }
 
@@ -140,9 +183,7 @@ public class InventarioController {
     @GetMapping("/filtrar/cliente/{cliente}")
     public String filtrarPorCliente(@PathVariable String cliente, Model model) {
         List<Inventario> items = inventarioService.obtenerPorCliente(cliente);
-        model.addAttribute("inventarios", items);
-        model.addAttribute("filtro", "Cliente: " + cliente);
-        model.addAttribute("total", items.size());
+        prepararVistaInventario(model, items, null, null, null, true, "Cliente: " + cliente);
         return "inventario";
     }
 
@@ -150,9 +191,7 @@ public class InventarioController {
     @GetMapping("/filtrar/sala/{sala}")
     public String filtrarPorSala(@PathVariable String sala, Model model) {
         List<Inventario> items = inventarioService.obtenerPorSala(sala);
-        model.addAttribute("inventarios", items);
-        model.addAttribute("filtro", "Sala: " + sala);
-        model.addAttribute("total", items.size());
+        prepararVistaInventario(model, items, null, sala, null, true, "Sala: " + sala);
         return "inventario";
     }
 

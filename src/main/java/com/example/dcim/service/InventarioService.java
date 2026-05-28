@@ -89,6 +89,10 @@ public class InventarioService {
         return inventarioRepository.buscar(search);
     }
 
+    public List<Inventario> obtenerPorSitioSalaYEstado(String sitio, String sala, String estado) {
+        return inventarioRepository.findBySitioAndSalaAndEstado(sitio, sala, estado);
+    }
+
     // Importar múltiples sin duplicados — cada ítem en su propia transacción
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void importarLote(List<Inventario> items) throws Exception {
